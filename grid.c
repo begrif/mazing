@@ -458,14 +458,14 @@ namegrid(GRID *g, char*name)
  * return sum of results
  */
 int
-iterategrid(GRID *g, int (*ifunc)(CELL *,void *), void *param)
+iterategrid(GRID *g, int (*ifunc)(GRID *,CELL *,void *), void *param)
 {
   int rc = 0;
   int i, j;
 
   for(i = 0; i < g->rows; i ++) {
     for(j = 0; j < g->cols; j ++) {
-      rc += ifunc(visitrc(g,i,j),param);
+      rc += ifunc(g, visitrc(g,i,j), param);
     }
   }
   return rc;
@@ -475,7 +475,7 @@ iterategrid(GRID *g, int (*ifunc)(CELL *,void *), void *param)
  * return sum of results
  */
 int
-iteraterow(GRID *g, int i, int (*ifunc)(CELL *,void *), void *param)
+iteraterow(GRID *g, int i, int (*ifunc)(GRID *,CELL *,void *), void *param)
 {
   int rc = 0;
   if(!g || (i < 0) || (i >= g->rows)) {
@@ -483,13 +483,13 @@ iteraterow(GRID *g, int i, int (*ifunc)(CELL *,void *), void *param)
   }
 
   for(int j = 0; j < g->cols; j++) {
-    rc += ifunc(visitrc(g,i,j),param);
+    rc += ifunc(g, visitrc(g,i,j), param);
   }
   return rc;
 } /* iteraterow() */
 
 int
-iteratecol(GRID *g, int j, int (*ifunc)(CELL *,void *), void *param)
+iteratecol(GRID *g, int j, int (*ifunc)(GRID *,CELL *,void *), void *param)
 {
   int rc = 0;
   if(!g || (j < 0) || (j >= g->cols)) {
@@ -497,7 +497,7 @@ iteratecol(GRID *g, int j, int (*ifunc)(CELL *,void *), void *param)
   }
 
   for(int i = 0; i < g->rows; i++) {
-    rc += ifunc(visitrc(g,i,j),param);
+    rc += ifunc(g, visitrc(g,i,j), param);
   }
   return rc;
 } /* iteratecol() */

@@ -139,12 +139,12 @@ int namebyid(GRID *, int /*id*/, char *);
 int namegrid(GRID *, char *);
 
 /* call one function on each cell in a row, col, or grid.
- * that one function takes a pointer to a CELL and a pointer
- * to a custom structure.
+ * that one function takes a pointer to the grid, a CELL, and
+ * a pointer to a custom structure if it needs to store state.
  */
-int iteraterow(GRID *, int, int(*)(CELL*,void *), void *);
-int iteratecol(GRID *, int, int(*)(CELL*,void *), void *);
-int iterategrid(GRID *, int(*)(CELL*,void *), void *);
+int iteraterow(GRID *, int, int(*)(GRID *,CELL*,void *), void *);
+int iteratecol(GRID *, int, int(*)(GRID *,CELL*,void *), void *);
+int iterategrid(GRID *, int(*)(GRID *,CELL*,void *), void *);
 
 /* find the opposite of a direction */
 int opposite( int /*dir*/);

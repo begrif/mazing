@@ -65,7 +65,7 @@ tryconnect(GRID *g, CELL *c, int d)
 }
 
 int
-printidandname(CELL *c, void *unused)
+printidandname(GRID *notused, CELL *c, void *unused)
 {
   if(!c) { 
     printf("Not a cell\n");
@@ -83,7 +83,7 @@ printidandname(CELL *c, void *unused)
 typedef struct { int total; } insum;
 
 int
-counter(CELL *c, void *t_p)
+counter(GRID *notused, CELL *c, void *t_p)
 {
   insum *t;
   t = (insum *)t_p;
