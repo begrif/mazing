@@ -1,5 +1,7 @@
 *.o
 testgrid
+binary_tree
+sidewinder
 core
 tags
 *.swp
