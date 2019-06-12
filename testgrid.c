@@ -2,6 +2,7 @@
 /* testing a maze grid */
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "grid.h"
 
@@ -100,11 +101,19 @@ main(int ignored, char**notused)
 {
   GRID *g;
   CELL *c1, *c2, *c3, *c4;
-  int d;
+  int d, edges, walls;
   int gr, gc;
   int mr1, mr2, mc1, mc2;
   int id, rc;
   insum total = { 0 };
+  char *board;
+  const char expectedboard[] = "+---+---+---+\n"
+                               "|   |   |   |\n"
+                               "+---+   +---+\n" 
+                               "|     X     |\n"
+                               "+---+   +---+\n" 
+                               "|   |   |   |\n"
+                               "+---+---+---+\n";
 
   gr = 4; gc = 6;
 
@@ -257,7 +266,76 @@ main(int ignored, char**notused)
 
   printf("\nVisual only test of ascii_grid\n");
   namegrid(g, "Test board");
-  puts(ascii_grid(g, 1));
+  board = ascii_grid(g, 1);
+  puts(board);
+  free(board);
+
+  freegrid(g);
+
+  printf("\nNew 3x3 grid\n");
+
+  g = creategrid(3,3,2);
+  c1 = visitrc(g,1,1);
+  edges = edgestatusbycell(g,c1);
+  walls = wallstatusbycell(c1);
+
+  if(edges == NO_EDGES) {
+    printf("No edges on middle cell, correct.\n");
+  } else {
+    printf("Found edges on middle cell, wrong.\n");
+    return(7);
+  }
+
+  if(walls == NO_WALLS) {
+    printf("Missing walls on middle cell, wrong.\n");
+    return(7);
+  } else {
+    printf("No walls on middle cell, correct.\n");
+    if(walls & NORTH_WALL) { } else { printf("But missing north\n"); return 7;}
+    if(walls & SOUTH_WALL) { } else { printf("But missing south\n"); return 7;}
+    if(walls & EAST_WALL ) { } else { printf("But missing east\n"); return 7;}
+    if(walls & WEST_WALL ) { } else { printf("But missing west\n"); return 7;}
+  }
+
+  edges = edgestatusbyid(g,0);
+  if(edges == NORTHWEST_CORNER) {
+    printf("NW corner cell, correct.\n");
+  } else {
+    printf("Wrong edges on NW corner\n");
+    return(7);
+  }
+
+  edges = edgestatusbyrc(g,2,2);
+  if(edges == SOUTHEAST_CORNER) {
+    printf("SE corner cell, correct.\n");
+  } else {
+    printf("Wrong edges on SE corner\n");
+    return(7);
+  }
+
+  printf("Knocking down all walls on middle cell.\n");
+  for(int d = FIRSTDIR; d < FOURDIRECTIONS; d++) {
+    if(tryconnect(g, c1, d)) {
+      return(6);
+    }
+  }
+  namebycell(c1, " X");
+  walls = wallstatusbycell(c1);
+  if(walls == NO_WALLS) {
+    printf("Now correctly no walls\n");
+  } else {
+    printf("What? Still walls on middle cell, wrong.\n");
+    return(7);
+  }
+
+  board = ascii_grid(g, 1);
+  puts(board);
+  if(0 == strncmp(board, expectedboard, BUFSIZ)) {
+    printf("ASCII art as expected\n");
+  } else {
+    printf("ASCII art wrong\n");
+    return(7);
+  }
 
   freegrid(g);
   return(0);

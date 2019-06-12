@@ -26,6 +26,26 @@
 #define EITHER          -4
 #define THIS            -5
 
+/* for use with the edgestatus functions */
+#define NORTH_EDGE              0x001
+#define WEST_EDGE               0x002
+#define EAST_EDGE               0x004
+#define SOUTH_EDGE              0x008
+#define NO_EDGES                0x100
+#define EDGE_ERROR              0x800
+#define NORTHWEST_CORNER        (0x001|0x002)
+#define NORTHEAST_CORNER        (0x001|0x004)
+#define SOUTHWEST_CORNER        (0x008|0x002)
+#define SOUTHEAST_CORNER        (0x008|0x004)
+
+/* for use with the wallstatus functions */
+#define NORTH_WALL	NORTH_EDGE
+#define WEST_WALL	WEST_EDGE
+#define EAST_WALL	EAST_EDGE
+#define SOUTH_WALL	SOUTH_EDGE
+#define NO_WALLS	NO_EDGES
+#define WALL_ERROR	EDGE_ERROR
+
 /* Max size of a name */
 #ifndef BUFSIZ
 #  define BUFSIZ 1024	/* typical value from stdio.h */
@@ -82,6 +102,8 @@ CELL *visitrandom(GRID *);
  * connect makes connections
  * isconnected tests connections
  * delconnect removes connections
+ * edgestatus returns information about edges
+ * wallstatus returns information about walls
  */
 void connectbycell(CELL *, int /* cell1 -> cell2 direction */,
              CELL *, int /* cell2 -> cell1 direction */);
@@ -99,6 +121,14 @@ int isconnectedbyrc(GRID *,
 		int /*r1*/, int /*c1*/,
 		int /*r2*/, int /*c2*/, int /* direction */);
 int isconnectedbyid(GRID *, int /*id1*/, int /*id1*/, int /* direction */);
+
+int edgestatusbycell(GRID *, CELL *);
+int edgestatusbyrc(GRID *, int /*row*/, int/*col*/);
+int edgestatusbyid(GRID *, int /*id*/);
+
+int wallstatusbycell(CELL *);
+int wallstatusbyrc(GRID *, int /*row*/, int/*col*/);
+int wallstatusbyid(GRID *, int /*id*/);
 
 /* assign a name (to a newly malloced string) to a cell */
 int namebycell(CELL *, char *);

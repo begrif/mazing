@@ -329,6 +329,79 @@ isconnectedbyid(GRID *g, int id1, int id2, int d)
 } /* isconnectedbyid() */
 
 
+/* for a particular cell, return information about the edges it
+ * adjoins. Edges are returned as bit status flags, so check
+ * results accordingly.
+ */
+int
+edgestatusbycell(GRID *g, CELL *c)
+{
+  int edges = 0;
+  if(!g) { return EDGE_ERROR; }
+  if(!c) { return EDGE_ERROR; }
+
+  if(c->row == 0) {           edges = edges|NORTH_EDGE; }
+  if(c->col == 0) {           edges = edges|WEST_EDGE; }
+  if(c->row == g->rows - 1) { edges = edges|SOUTH_EDGE; }
+  if(c->col == g->cols - 1) { edges = edges|EAST_EDGE; }
+
+  if (edges == 0) {           edges = NO_EDGES; }
+  return edges;
+} /* edgestatusbycell() */
+
+int
+edgestatusbyrc(GRID *g, int i, int j)
+{
+  if(!g) { return EDGE_ERROR; }
+
+  return edgestatusbycell(g, visitrc(g,i,j));
+} /* edgestatusbyrc */
+
+int
+edgestatusbyid(GRID *g, int id)
+{
+  if(!g) { return EDGE_ERROR; }
+
+  return edgestatusbycell(g, visitid(g,id));
+} /* edgestatusbyid */
+
+
+/* for a particular cell, return information about the walls it
+ * adjoins. Walls are returned as bit status flags, so check
+ * results accordingly.
+ */
+int
+wallstatusbycell(CELL *c)
+{
+  int walls = 0;
+  if(!c) { return WALL_ERROR; }
+
+  if(c->dir[NORTH] == NC) { walls = walls|NORTH_WALL; }
+  if(c->dir[WEST]  == NC) { walls = walls|WEST_WALL; }
+  if(c->dir[SOUTH] == NC) { walls = walls|SOUTH_WALL; }
+  if(c->dir[EAST]  == NC) { walls = walls|EAST_WALL; }
+
+  if (walls == 0) { walls = NO_WALLS; }
+  return walls;
+} /* wallstatusbycell() */
+
+int
+wallstatusbyrc(GRID *g, int i, int j)
+{
+  if(!g) { return WALL_ERROR; }
+
+  return wallstatusbycell(visitrc(g,i,j));
+} /* wallstatusbyrc */
+
+int
+wallstatusbyid(GRID *g, int id)
+{
+  if(!g) { return WALL_ERROR; }
+
+  return wallstatusbycell(visitid(g,id));
+} /* wallstatusbyid */
+
+
 /* mallocs space and copies a name to a cell */
 /* returns -3 if no cell,
  * -2 if malloc failed after free()ing old name
