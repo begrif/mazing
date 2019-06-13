@@ -32,6 +32,7 @@
 #define EAST_EDGE               0x004
 #define SOUTH_EDGE              0x008
 #define NO_EDGES                0x100
+/* used below                   0x200 */
 #define EDGE_ERROR              0x800
 #define NORTHWEST_CORNER        (0x001|0x002)
 #define NORTHEAST_CORNER        (0x001|0x004)
@@ -39,11 +40,12 @@
 #define SOUTHEAST_CORNER        (0x008|0x004)
 
 /* for use with the wallstatus functions */
+/* (wall|edge) gives all blockages.      */
 #define NORTH_WALL	NORTH_EDGE
 #define WEST_WALL	WEST_EDGE
 #define EAST_WALL	EAST_EDGE
 #define SOUTH_WALL	SOUTH_EDGE
-#define NO_WALLS	NO_EDGES
+#define NO_WALLS	0x200
 #define WALL_ERROR	EDGE_ERROR
 
 /* Max size of a name */
