@@ -139,7 +139,7 @@ main(int notused, char**ignored)
     return 1;
   }
 
-  distance = distanceto(dm, visitid(g,99) );
+  distance = distanceto(dm, visitid(g,99), 1);
   ascii_dmap(dm);
 
   if(distance != 99) {
@@ -181,7 +181,7 @@ main(int notused, char**ignored)
     return 2;
   }
 
-  distance = distanceto(dm, visitid(g,g->max - 1) );
+  distance = distanceto(dm, visitid(g,g->max - 1), 1);
   ascii_dmap(dm);
 
   /* 12 because (width+height-2) when no diagonal movement  */
@@ -223,7 +223,7 @@ main(int notused, char**ignored)
     return 3;
   }
 
-  distance = distanceto(dm, visitid(g,g->max - 1) );
+  distance = distanceto(dm, visitid(g,g->max - 1), 1);
   ascii_dmap(dm);
 
   if(distance != DISTANCE_ERROR) {
@@ -240,6 +240,41 @@ main(int notused, char**ignored)
   printf("findpath correctly failed with %d\n", rc);
 
   freedistancemap(dm);
+
+  iterategrid(g, serpentine, NULL);
+  board = ascii_grid(g, 1);
+  puts(board);
+  free(board);
+
+  dm = createdistancemap(g, visitid(g,0) );
+  distance = distanceto(dm, visitid(g,g->max - 1), 0);
+  ascii_dmap(dm);
+
+  if(dm->farthest != 6) {
+    printf("find farthest got wrong answer: %d\n", dm->farthest);
+    return 4;
+  }
+  printf("find farthest got to %d, distance %d\n",
+  	dm->farthest_id, dm->farthest);
+  freedistancemap(dm);
+
+  dm = findlongestpath(g);
+  if(!dm) {
+    printf("findlongestpath failed\n");
+    return 4;
+  }
+  printf("findlongestpath found:\n");
+  ascii_dmap(dm);
+  rc = printpath(dm->path, 10);
+  if( rc != 0 ) {
+    printf("printpath failed %d\n", rc);
+    return 4;
+  }
+  if((dm->farthest != 8) || (dm->farthest_id != 2)) {
+    printf("incorrect longest path\n");
+    return 4;
+  }
+
   freegrid(g);
 
   return 0;

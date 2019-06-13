@@ -19,6 +19,8 @@ typedef struct {
   GRID *grid;
   int root_id;		/* set at creation time */
   int target_id;	/* set when target found */
+  int farthest_id;	/* set with non-lazy distance maps */
+  int farthest;		/* set with non-lazy distance maps */
   int rrow, rcol;	/* root row, col values, set at creation time */
   int msize;		/* size of map; frontier always one larger */
   int *map;		/* distances from root */
@@ -30,8 +32,9 @@ typedef struct {
 DMAP *createdistancemap(GRID *, CELL *);
 void freedistancemap(DMAP *);
 
-int distanceto(DMAP *, CELL *);
+int distanceto(DMAP *, CELL *,int /* lazy flag */);
 int findpath(DMAP *);
+DMAP *findlongestpath(GRID *);
 
 void ascii_dmap(DMAP *);
 #endif

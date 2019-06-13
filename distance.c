@@ -26,6 +26,8 @@ createdistancemap(GRID *g, CELL *c)
 
   dm->root_id = c->id;
   dm->target_id = NC;
+  dm->farthest_id = NC;
+  dm->farthest = NV;
   dm->rrow = c->row;
   dm->rcol = c->col;
   dm->msize = g->max;
@@ -70,17 +72,18 @@ freedistancemap(DMAP *dm)
  * gets a match. Usually not the fastest way to solve a maze,
  * it is however the most forgiving of weird maze topologies.
  * This must be run (with a distance found) for findpath() to
- * work.
+ * work, findpath() can use lazy results, finding longest
+ * possible path, findlongestpath(), needs full results.
  */
 int
-distanceto(DMAP *dm, CELL *c)
+distanceto(DMAP *dm, CELL *c, int lazy)
 {
   int want;
   int of, nf;
   int *frontier;
   CELL *fcell;
   CELL *vcell;
-  int far;
+  int far, found;
   int edges, walls;
 
   if(!dm) { return DISTANCE_ERROR; }
@@ -89,13 +92,13 @@ distanceto(DMAP *dm, CELL *c)
   want = c->id;
 
   /* the trivial case */
-  if(dm->root_id == want) {
+  if(lazy && (dm->root_id == want)) {
     return 0;
     dm->map[want] = 0;
     dm->target_id = want;
   }
 
-  far = 0;
+  far = found = 0;
 
   while( far < dm->msize ) {
 
@@ -107,6 +110,13 @@ distanceto(DMAP *dm, CELL *c)
     for (of = 0; dm->frontier[of] != NOT_VISITED; of ++) {
       dm->map[dm->frontier[of]] = far;
 
+      if(!lazy) {
+        if (far > dm->farthest) {
+	  dm->farthest = far;
+	  dm->farthest_id = dm->frontier[of];
+	}
+      }
+
       fcell = visitid(dm->grid, dm->frontier[of]);
       if(!fcell) {
 	free(frontier);
@@ -114,10 +124,14 @@ distanceto(DMAP *dm, CELL *c)
       }
 
       if(fcell->id == want) {
-	free(dm->frontier);
-	dm->frontier = frontier;
         dm->target_id = want;
-	return far;
+	if(lazy) {
+	  free(dm->frontier);
+	  dm->frontier = frontier;
+	  return far;
+	} else {
+	  found = 1;
+	}
       }
 
       edges = edgestatusbycell(dm->grid, fcell);
@@ -169,6 +183,9 @@ distanceto(DMAP *dm, CELL *c)
 
   } /* while walking as far as possible */
 
+  if (found) { 
+    return 0;
+  }
   return(DISTANCE_ERROR);
 } /* distanceto() */
 
@@ -242,6 +259,73 @@ findpath(DMAP *dm)
 
   return 0;
 } /* findpath() */
+
+DMAP *
+findlongestpath(GRID *g)
+{
+  DMAP *first, *second;
+  CELL *pa, *pb;
+  int rc, fid;
+
+  if(!g) {
+    return NULL;
+  }
+
+  pa = visitid(g, 0);
+  pb = visitid(g, g->max - 1);
+  if(!pa || !pb) {
+    return NULL;
+  }
+
+  first = createdistancemap(g, pa);
+  if(!first) {
+    return NULL;
+  }
+
+  rc = distanceto(first, pb, 0);
+  if(rc == DISTANCE_ERROR) {
+    freedistancemap(first);
+    return NULL;
+  }
+
+  fid = first->farthest_id;
+  if(fid == 0) {
+    /* Point A was id 0, if the furthest point from Point A is
+     * Point A, we've got a real degenerate case.
+     */
+    TRAIL *walk = (TRAIL *)malloc( sizeof(TRAIL) );
+    walk->next = walk->prev = NULL;
+    walk->cell_id = fid;
+    first->path = walk;
+    return first;
+  }
+
+  freedistancemap(first);
+  pb = visitid(g, fid);
+  if(!pb) {
+    return NULL;
+  }
+
+  second = createdistancemap(g, pb);
+  if(!second) {
+    return NULL;
+  }
+
+  rc = distanceto(second, pa, 0);
+  if(rc == DISTANCE_ERROR) {
+    freedistancemap(second);
+    return NULL;
+  }
+
+  second->target_id = second->farthest_id;
+  rc = findpath(second);
+  if(rc == DISTANCE_ERROR) {
+    freedistancemap(second);
+    return NULL;
+  }
+
+  return second;
+} /* findlongestpath() */
 
 /* print the distance map for testing */
 void
