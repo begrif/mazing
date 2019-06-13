@@ -1,5 +1,6 @@
 *.o
 testgrid
+testdistance
 binary_tree
 sidewinder
 core
