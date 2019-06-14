@@ -1,7 +1,7 @@
 
 CFLAGS = -g
 
-mazes: binary_tree sidewinder
+mazes: binary_tree sidewinder aldousbroder
 
 test: testgrid testdistance
 	./testgrid
@@ -16,6 +16,7 @@ testgrid: testgrid.o grid.o
 testdistance: testdistance.o distance.o grid.o
 binary_tree: binary_tree.o grid.o
 sidewinder: sidewinder.o grid.o
+aldousbroder: aldousbroder.o distance.o grid.o
 
 testgrid.o: grid.h
 testdistance.o: distance.h grid.h

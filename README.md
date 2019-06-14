@@ -15,12 +15,17 @@ Programs
 2. sidewinder
    * better maze, but still has highly visible artifact
    * ascii only output
-3. testgrid
+3. aldousbroder
+   * relatively slow random walk algorithm with nice looking mazes
+   * ascii only output
+   * prints a blank and a solved version
+4. testgrid
    * code to test grid.c functions
    * ascii only output
-3. testdistance
+5. testdistance
    * code to test distance.c functions
    * ascii only output
+   * TODO: needs better test cases for longest path solving
 
 General code
 ------------
@@ -31,8 +36,21 @@ General code
    * TODO: building walls (deleting connections)
 2. `distance.c` and `distance.h`
    * as an adjuct to `grid.c`, this measures distances
-   * finds one shortest path (even if multiple are possible)
+   * finds one shortest path (just one, even if multiple are possible)
+   * finds one longest path (just one, even if multiple are possible)
    * not constrained to particular maze topologies
+
+Short variables by convention:
+ * `g` is grid
+ * `c` is a cell
+ * `i` is a row number
+ * `j` is a column number
+ * `t` is a gtype/ctype
+ * `d` is a direction or a distance
+ * `go` is a direction
+ * `dm` is a distance map
+ * `rc` is a return code
+
 
 Author
 ------
