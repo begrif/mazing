@@ -28,68 +28,17 @@
  * |   |               |                   |
  * +---+---+---+---+---+---+---+---+---+---+
  *
+ * Named for David Aldous and Andrei Broder, this is a random
+ * walk that runs until ever cell has been visited once. It's
+ * inefficient in that there are a lot of useless second, third,
+ * etc, cell visits in the process.
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "grid.h"
-#include "distance.h"
+#include "mazes.h"
 
-#define UNVISITED	1
-#define VISITED		2
-#define NEEDDIR		(99+DIRECTIONS)
-
-
-/* Named for David Aldous and Andrei Broder, this method cannot
- * use the grid iterator because it needs to visit cells randomly,
- * and it needs to be able to revisit cells.
- */
-int
-aldbro(GRID *g)
-{
-  CELL *cc, *nc;
-  int edges;
-  int tovisit;
-  int go;
-
-  if(!g) { return -1; }
-
-  cc = visitrandom(g);
-  if(!cc) { return -1; }
-  cc->ctype = VISITED;
-  tovisit = g->max - 1;
-
-  go = NEEDDIR;
-
-  while(tovisit) {
-
-    edges = edgestatusbycell(g,cc);
-    
-    while( go > FOURDIRECTIONS ) {
-      go = FIRSTDIR + (random() % FOURDIRECTIONS);
-      if((go == NORTH) && (edges & NORTH_EDGE)) { go = NEEDDIR; }
-      if((go == SOUTH) && (edges & SOUTH_EDGE)) { go = NEEDDIR; }
-      if((go == WEST ) && (edges &  WEST_EDGE)) { go = NEEDDIR; }
-      if((go == EAST ) && (edges &  EAST_EDGE)) { go = NEEDDIR; }
-    } /* pick a viable direction */
-
-    nc = visitdir(g, cc, go, ANY);
-    if(!nc) { return -1; }
-
-    if(nc->ctype == UNVISITED) {
-      nc->ctype = VISITED;
-      tovisit --;
-      connectbycell(cc, go, nc, SYMMETRICAL);
-    }
-
-    cc = nc;
-    go = NEEDDIR;
-
-  } /* while cells to visit */
-
-  return 0;
-} /* aldbro() */
 
 int
 main(int notused, char**ignored)

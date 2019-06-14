@@ -4,10 +4,11 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "grid.h"
-#include "distance.h"
+#include "mazes.h"
 
-/* Not a maze, but a serpentine path, for testing the
+/* This uses two non-random "maze" structures for test.
+ *
+ * First a serpentine path, for testing the
  * worst case of a path from point A to B.
  *
  * Example maze:
@@ -22,41 +23,7 @@
  * |                                     B |
  * +---+---+---+---+---+---+---+---+---+---+
  *
- */
-int
-serpentine(GRID *g, CELL *c, void*unused)
-{
-  CELL *cc;
-  int edges;
-  int go;
-
-  if(!g) { return -1; }
-  if(!c) { return -1; }
-
-  edges = edgestatusbycell(g,c);
-
-  if(edges & EAST_EDGE) {
-    if(c->row % 2) {
-      cc = visitdir(g, c, SOUTH, ANY);
-      connectbycell(c, SOUTH, cc, SYMMETRICAL);
-    }
-  }
-
-  if(edges & WEST_EDGE) {
-    if(0 == (c->row % 2)) {
-      cc = visitdir(g, c, SOUTH, ANY);
-      connectbycell(c, SOUTH, cc, SYMMETRICAL);
-    }
-  }
-
-  if(!(edges & EAST_EDGE)) {
-    cc = visitdir(g, c, EAST, ANY);
-    connectbycell(c, EAST, cc, SYMMETRICAL);
-  }
-  return 0;
-}
-
-/* Other direction worst case, no walls at all.
+ * Second, other direction worst case, hollow with no walls at all.
  * Example maze:
  * +---+---+---+---+---+---+---+
  * |                           |
@@ -68,30 +35,6 @@ serpentine(GRID *g, CELL *c, void*unused)
  * |                           |
  * +---+---+---+---+---+---+---+
  */
-int
-hollow(GRID *g, CELL *c, void*unused)
-{
-  CELL *cc;
-  int edges;
-  int go;
-
-  if(!g) { return -1; }
-  if(!c) { return -1; }
-
-  edges = edgestatusbycell(g,c);
-
-  if(!(edges & EAST_EDGE)) {
-    cc = visitdir(g, c, EAST, ANY);
-    connectbycell(c, EAST, cc, SYMMETRICAL);
-  }
-
-  if(!(edges & SOUTH_EDGE)) {
-    cc = visitdir(g, c, SOUTH, ANY);
-    connectbycell(c, SOUTH, cc, SYMMETRICAL);
-  }
-
-  return 0;
-}
 
 int
 printpath(TRAIL *walk, int max)

@@ -15,6 +15,7 @@ typedef struct trail_t {
   struct trail_t *prev;
 } TRAIL;
 
+/* no part of this structure is intended to be changed by maze generators */
 typedef struct {
   GRID *grid;
   int root_id;		/* set at creation time */
@@ -23,7 +24,7 @@ typedef struct {
   int farthest;		/* set with non-lazy distance maps */
   int rrow, rcol;	/* root row, col values, set at creation time */
   int msize;		/* size of map; frontier always one larger */
-  int *map;		/* distances from root */
+  int *map;		/* distances from root, indexed by cell id */
   int *frontier;	/* cells to check when looking for a target */
   TRAIL *path;		/* linked list of a path from root to target */
 } DMAP;

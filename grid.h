@@ -53,6 +53,10 @@
 #  define BUFSIZ 1024	/* typical value from stdio.h */
 #endif
 
+/* CELLs and GRIDs have "user use" variables that can be changed at
+ * will by maze makers, and other variables that should be considered
+ * read only.
+ */
 typedef struct
 {
    int id; /* unique id of a cell (sequential numbers) */
@@ -62,9 +66,9 @@ typedef struct
     */
    int dir[DIRECTIONS];
 
-   int ctype;	/* for future use, probably determine how to draw a cell */
+   int ctype;	/* for user use, initialized to gtype */
    char *name;	/* for user use */
-   void *data;	/* placeholder */
+   void *data;	/* for user use to hold arbitrary structures */
 } CELL;
 
 typedef struct
@@ -73,12 +77,11 @@ typedef struct
    int rows;
    int cols;
    int planes;
-
-   int gtype;	/* initially the same as ctype */
    int max;	/* size of one plane (rows*cols) */
 
+   int gtype;	/* for user use, set at creation time */
    char *name;	/* for user use */
-   void *data;	/* placeholder */
+   void *data;	/* for user use to hold arbitrary structures */
 
    CELL *cells;
 } GRID;
@@ -103,7 +106,7 @@ CELL *visitrandom(GRID *);
  *
  * connect makes connections
  * isconnected tests connections
- * delconnect removes connections
+ * delconnect removes connections	(TODO)
  * edgestatus returns information about edges
  * wallstatus returns information about walls
  */
