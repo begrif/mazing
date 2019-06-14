@@ -3,17 +3,9 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include "grid.h"
-
-/* by convention:
-   g is grid
-   c is a cell
-   i is a row number
-   j is a column number
-   t is a gtype/ctype
-   d is a direction
-*/
 
 /* initializes a cell to have no connections
  * of type t
@@ -73,8 +65,7 @@ creategrid(int i, int j, int t)
     return (GRID*)NULL;
   }
 
-  /* may produce compiler warning */
-  srandom((int)g);
+  srandom(time(NULL));
 
   count = 0;
   for (int row = 0; row < g->rows; row ++) {
@@ -286,7 +277,7 @@ void connectbyid(GRID *g, int id1, int c1c2d,
  * if d is ANYDIR, will try all directions, and returning first found,
  * but if d is a particular direction will only try that one.
  * NOTE that zero is a valid direction, so test results against NC
- * or an expected direction, eg (cell_connected(a, b, dir) == dir)
+ * or an expected direction, eg (isconnectedbycell(a, b, dir) == dir)
  */
 int 
 isconnectedbycell(CELL *c1, CELL *c2, int d)
