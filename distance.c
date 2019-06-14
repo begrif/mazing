@@ -226,8 +226,10 @@ findpath(DMAP *dm)
 
 #define TEST_SID \
 	if(curdis == dm->map[sid] + 1) { \
-	  walk->cell_id = id = sid; \
-	  continue; \
+	  if(isconnectedbyid(dm->grid, id, sid, ANYDIR) != NC) { \
+	    walk->cell_id = id = sid; \
+	    continue; \
+	  } \
 	}
 
     if(si) {
@@ -326,6 +328,68 @@ findlongestpath(GRID *g)
 
   return second;
 } /* findlongestpath() */
+
+int
+iteratewalk(DMAP *dm, int(*ifunc)(DMAP *, int, void*), void*param)
+{
+  TRAIL *step;
+  int sum = 0;
+
+  if(!dm) {
+    return -1;
+  }
+  if(!ifunc) {
+    return -1;
+  }
+  if(!dm->path) {
+    return -1;
+  }
+
+  step = dm->path;
+  do {
+    sum += ifunc(dm, step->cell_id, param);
+    step = step->next;
+  } while(step);
+  
+  return sum;
+} /* iteratewalk() */
+
+static
+int
+namewalker(DMAP *dm, int cid, void*param)
+{
+  char scratch[BUFSIZ];
+  
+  if(param) {
+    namebyid(dm->grid, cid, (char*)param);
+  } else {
+    snprintf(scratch, BUFSIZ, "%d", dm->map[cid]);
+    namebyid(dm->grid, cid, scratch);
+  }
+  return 0;
+} /* namewalker() */
+
+/* Insert a name into all of the steps on a path
+ * if name is NULL stringify the step count, and use that.
+ * The three names are first (first step only), middle,
+ * and last (last step only).
+ * Returns a negative value on error, zero on success.
+ */
+int
+namepath(DMAP *dm, char *fname, char *mname, char *lname)
+{
+  int rc;
+
+  rc = iteratewalk(dm, namewalker, mname);
+  if(rc < 0) { return rc; }
+
+  if(fname) {
+    namebyid(dm->grid, dm->root_id, fname);
+  }
+  if(lname) {
+    namebyid(dm->grid, dm->target_id, lname);
+  }
+} /* namepath */
 
 /* print the distance map for testing */
 void

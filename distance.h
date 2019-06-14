@@ -36,5 +36,8 @@ int distanceto(DMAP *, CELL *,int /* lazy flag */);
 int findpath(DMAP *);
 DMAP *findlongestpath(GRID *);
 
+int iteratewalk(DMAP *, int(*)(DMAP *, int, void*), void*);
+int namepath(DMAP *, char */*first*/, char */*middle*/, char*/*last*/);
+
 void ascii_dmap(DMAP *);
 #endif
