@@ -274,8 +274,33 @@ main(int notused, char**ignored)
     printf("incorrect longest path\n");
     return 4;
   }
+  printf("a longest possible path found\n");
 
+  freedistancemap(dm);
   freegrid(g);
 
+  printf("\nCreating micro grid to test path.\n");
+  g = creategrid(1,1,3);
+  if(!g) {
+    printf("Create micro grid failed.\n");
+    return 5;
+  }
+  dm = findlongestpath(g);
+  if(!dm) {
+    printf("findlongestpath microgrid failed\n");
+    return 5;
+  }
+  rc = printpath(dm->path, 2);
+  if( rc != 0 ) {
+    printf("printpath failed %d\n", rc);
+    return 4;
+  }
+  if(dm->path->cell_id != 0) {
+    printf("findlongestpath microgrid didn't work\n");
+  }
+  printf("findlongestpath microgrid worked\n");
+
+  freedistancemap(dm);
+  freegrid(g);
   return 0;
 }
