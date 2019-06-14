@@ -1,6 +1,7 @@
 /* June 2019, Benjamin Elijah Griffin / Eli the Bearded */
 
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 
 #include "grid.h"
@@ -114,6 +115,7 @@ int
 main(int notused, char**ignored)
 {
   GRID *g;
+  CELL *c;
   DMAP *dm;
   char *board;
   int distance;
@@ -275,6 +277,31 @@ main(int notused, char**ignored)
     return 4;
   }
   printf("a longest possible path found\n");
+  
+  namepath(dm, "STA", NULL, "END");
+  board = ascii_grid(g, 1);
+  puts(board);
+  free(board);
+
+  c = visitid(g,1);
+  if(!c) {
+    printf("something broke with the grid\n");
+    return 4;
+  }
+  if(strncmp("7", c->name, 1)) {
+    printf("unexpected name on cell %d: %s\n", c->id, c->name);
+    return 4;
+  }
+  c = visitid(g,2);
+  if(!c) {
+    printf("something broke with the grid\n");
+    return 4;
+  }
+  if(strncmp("END", c->name, 4)) {
+    printf("unexpected name on cell %d: %s\n", c->id, c->name);
+    return 4;
+  }
+  printf("naming iterator works\n");
 
   freedistancemap(dm);
   freegrid(g);
