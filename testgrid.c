@@ -44,10 +44,16 @@ visit_should_fail(GRID* g,int i, int j)
 int
 tryconnect(GRID *g, CELL *c, int d)
 {
+    int check;
     CELL *nc = visitdir(g, c, d, ANY);
 
     if(nc) { 
-      printf("Connecting %d to %d (%s)\n", c->id, nc->id, dirtoname(d));
+      check = natdirectionbycell(c, nc);
+      if( d != check ) {
+        printf("Not the right natural direction result, %d != %d\n", d, check);
+	return 6;
+      }
+      printf("Connecting %d to %d (%s direction verified)\n", c->id, nc->id, dirtoname(d));
       connectbycell(c, d, nc, opposite(d));
 
       if((c->dir[d] != nc->id) || (nc->dir[opposite(d)] != c->id)) {
@@ -328,6 +334,7 @@ main(int ignored, char**notused)
     printf("What? Still walls on middle cell, wrong.\n");
     return(7);
   }
+
 
   board = ascii_grid(g, 1);
   puts(board);

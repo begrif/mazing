@@ -225,6 +225,7 @@ visitrandom(GRID *g)
  * connect{BAR} create a connection
  * isconnected{BAR} test a connection
  * delconnect{BAR} remove a connection
+ * natdirection{BAR} returns the expected direction from C1 to C2
  */
 
 /* connection creation */
@@ -382,7 +383,7 @@ wallstatusbyrc(GRID *g, int i, int j)
   if(!g) { return WALL_ERROR; }
 
   return wallstatusbycell(visitrc(g,i,j));
-} /* wallstatusbyrc */
+} /* wallstatusbyrc() */
 
 int
 wallstatusbyid(GRID *g, int id)
@@ -390,9 +391,48 @@ wallstatusbyid(GRID *g, int id)
   if(!g) { return WALL_ERROR; }
 
   return wallstatusbycell(visitid(g,id));
-} /* wallstatusbyid */
+} /* wallstatusbyid() */
 
+/* 
+ * natdirection{BAR} returns the expected direction from C1 to C2
+ *			one of NORTH, SOUTH, EAST, WEST if adjacent
+ *			returns SYMMETRICAL if C1 is C2
+ *			returns NC if not adjacent or the same cell
+ */
+int
+natdirectionbycell(CELL *c1, CELL *c2)
+{
+  if(!c1) { return NC; }
+  if(!c2) { return NC; }
+  if((c1 == c2) || (c1->id == c2->id)) { return SYMMETRICAL; }
+  
+  if( c1->col == c2->col ) {
+    if ( c1->row == c2->row+1 ) { return NORTH; }
+    if ( c1->row == c2->row-1 ) { return SOUTH; }
+  }
+  else if( c1->row == c2->row ) {
+    if ( c1->col == c2->col+1 ) { return WEST; }
+    if ( c1->col == c2->col-1 ) { return EAST; }
+  }
+  return NC;
 
+} /* natdirectionbycell() */
+
+int
+natdirectionbyrc(GRID *g, int i1, int j1, int i2, int j2)
+{
+  if(!g) { return NC; }
+
+  return natdirectionbycell(visitrc(g,i1,j1), visitrc(g,i2,j2));
+} /* natdirectionbyrc() */
+
+int
+natdirectionbyid(GRID *g, int id1, int id2)
+{
+  if(!g) { return WALL_ERROR; }
+
+  return natdirectionbycell(visitid(g,id1), visitid(g,id2));
+} /* natdirectionbyid() */
 /* mallocs space and copies a name to a cell */
 /* returns -3 if no cell,
  * -2 if malloc failed after free()ing old name

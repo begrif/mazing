@@ -109,6 +109,7 @@ CELL *visitrandom(GRID *);
  * delconnect removes connections	(TODO)
  * edgestatus returns information about edges
  * wallstatus returns information about walls
+ * natdirection returns a direction between cells (but not for any pair)
  */
 void connectbycell(CELL *, int /* cell1 -> cell2 direction */,
              CELL *, int /* cell2 -> cell1 direction */);
@@ -130,6 +131,10 @@ int isconnectedbyid(GRID *, int /*id1*/, int /*id1*/, int /* direction */);
 int edgestatusbycell(GRID *, CELL *);
 int edgestatusbyrc(GRID *, int /*row*/, int/*col*/);
 int edgestatusbyid(GRID *, int /*id*/);
+
+int natdirectionbycell(CELL *, CELL *);
+int natdirectionbyrc(GRID *, int /*r1*/, int /*c1*/, int /*r2*/, int /*c2*/);
+int natdirectionbyid(GRID *, int /*id1*/, int /*id1*/);
 
 int wallstatusbycell(CELL *);
 int wallstatusbyrc(GRID *, int /*row*/, int/*col*/);
