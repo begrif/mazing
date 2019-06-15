@@ -9,6 +9,7 @@
 
 #define UNVISITED	1
 #define VISITED		2
+#define WALK_CONSIDER   3
 #define NEEDDIR		(99+DIRECTIONS)
 
 /* for sidewinder */
@@ -30,5 +31,6 @@ int hollow(GRID *, CELL *, void *);
  * visit ordering
  */
 int aldbro(GRID *);
+int wilson(GRID *);
 
 #endif

@@ -199,3 +199,113 @@ aldbro(GRID *g)
 } /* aldbro() */
 
 
+int
+wilson(GRID *g)
+{
+  CELL *cc, *nc;
+  int edges;
+  int tovisit;
+  int go;
+  TRAIL *walk, trailhead;
+  char *notes;
+
+  if(!g) { return -1; }
+  notes = (char*) calloc( 1, g->max );
+
+  cc = visitid(g, 0);
+  if(!cc) { return -1; }
+  cc->ctype = VISITED;
+  notes[0] = VISITED;
+  tovisit = g->max - 1;
+
+  trailhead.next = NULL;
+  trailhead.prev = NULL;
+
+  while(tovisit) {
+    int wandering;
+
+    if(tovisit < 0) {
+      /* shouldn't happen */
+      return -1;
+    }
+
+    /* Find somewhere fresh to start the walk */
+    while (cc->ctype == VISITED) {
+      cc = visitrandom(g);
+    }
+
+    notes[cc->id] = WALK_CONSIDER;
+    trailhead.cell_id = cc->id;
+    walk = &trailhead;
+    wandering = 1; 
+    go = NEEDDIR;
+    
+    while ( wandering ) {
+      edges = edgestatusbycell(g,cc);
+    
+      while( go > FOURDIRECTIONS ) {
+	go = FIRSTDIR + (random() % FOURDIRECTIONS);
+	if((go == NORTH) && (edges & NORTH_EDGE)) { go = NEEDDIR; }
+	if((go == SOUTH) && (edges & SOUTH_EDGE)) { go = NEEDDIR; }
+	if((go == WEST ) && (edges &  WEST_EDGE)) { go = NEEDDIR; }
+	if((go == EAST ) && (edges &  EAST_EDGE)) { go = NEEDDIR; }
+      } /* pick a viable direction */
+
+      nc = visitdir(g, cc, go, ANY);
+      if(!nc) { return -1; }
+
+      if(notes[nc->id] == WALK_CONSIDER) {
+        /* loop detected, backtrack */
+
+	while(walk->cell_id != nc->id) {
+	  notes[walk->cell_id] = 0;
+	  walk = walk->prev;
+	  free(walk->next);
+          walk->next = NULL;
+	} /* walking back */
+
+	cc = visitid(g, walk->cell_id);
+	go = NEEDDIR;
+	continue; /* wandering */
+      } 
+        
+      walk->next = (TRAIL*)malloc(sizeof(TRAIL));
+      if(!walk->next) { return -1; } /* leaks memory, on out of memory... */
+      walk->next->prev = walk;
+      walk = walk->next;
+      walk->next = NULL;
+      walk->cell_id = nc->id;
+
+      if(notes[nc->id] == VISITED) {
+        wandering = 0;
+      } else {
+        notes[nc->id] = WALK_CONSIDER;
+	cc = nc;
+        go = NEEDDIR;
+      }
+    } /* while wandering */
+
+    /* We have a trail, walk it back marking visited */
+    while ( walk != &trailhead ) {
+      tovisit --;
+      notes[walk->cell_id] = VISITED;
+      nc->ctype = VISITED;
+
+      walk = walk->prev;
+      free(walk->next);
+      cc = visitid(g, walk->cell_id);
+      go = natdirectionbycell(cc, nc);
+
+      connectbycell(cc, go, nc, SYMMETRICAL);
+      nc = cc;
+    } /* marking the trail */
+
+    notes[walk->cell_id] = VISITED;
+    nc->ctype = VISITED;
+
+  } /* while cells to visit */
+
+  return 0;
+} /* wilson() */
+
+
