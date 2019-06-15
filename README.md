@@ -9,6 +9,8 @@ https://pragprog.com/book/jbmaze/mazes-for-programmers
 Programs
 --------
 
+Maze demos:
+
 1. binary_tree
    * proof of concept maze, rather boring
    * ascii only output
@@ -17,12 +19,21 @@ Programs
    * ascii only output
 3. aldousbroder
    * relatively slow random walk algorithm with nice looking mazes
+   * Aldous-Broder has one walk that visits every cell
    * ascii only output
    * prints a blank and a solved version
-4. testgrid
+4. wilson
+   * relatively slow random walk algorithm with nice looking mazes
+   * Wilson has multiple walks that stop when reaching a visited cell
+   * ascii only output
+   * prints a blank and a solved version
+
+Code test:
+
+1. testgrid
    * code to test grid.c functions
    * ascii only output
-5. testdistance
+2. testdistance
    * code to test distance.c functions
    * ascii only output
    * TODO: needs better test cases for longest path solving
