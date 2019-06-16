@@ -323,6 +323,12 @@ wilson(GRID *g)
   return 0;
 } /* wilson() */
 
+/*
+ * Hunt-and-kill alternates hunting for unseen spaces and killing
+ * them with a random walk ending when finding a perviously visited
+ * cell. 
+ * Relies on a grid being marked fully UNVISITED (ctype) to start.
+ */
 int
 huntandkill(GRID *g)
 {
@@ -421,6 +427,11 @@ huntandkill(GRID *g)
 } /* huntandkill() */
 
 
+/*
+ * This backtracker is rather like hunt-and-kill, but retreats along
+ * it's own path when it needs to find a new starting point.
+ * Relies on a grid being marked fully UNVISITED (ctype) to start.
+ */
 int
 backtracker(GRID *g)
 {
