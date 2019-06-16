@@ -4,6 +4,8 @@
 #ifndef _MAZES_H
 #define _MAZES_H
 
+#include <sys/queue.h>
+
 #include "grid.h"
 #include "distance.h"
 
@@ -19,6 +21,12 @@ typedef struct {
   int runstart_c;
 } sw_tree_status;
 
+/* for backtracker */
+typedef struct backtrack_s {
+  CELL *cell;
+  SLIST_ENTRY(backtrack_s) trail;
+} backtrack_stack_t;
+
 /* iterategrid() call backs; these can generate a "maze" by visiting
  * every cell once in any order.
  */
@@ -33,5 +41,6 @@ int hollow(GRID *, CELL *, void *);
 int aldbro(GRID *);
 int wilson(GRID *);
 int huntandkill(GRID *);
+int backtracker(GRID *);
 
 #endif

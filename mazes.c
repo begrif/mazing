@@ -3,7 +3,16 @@
 
 #include <stdlib.h>
 
+/* A macro system for several simple data structures, available on
+ * BSD and Linux systems (and BSD in origin). The singlely-linked
+ * list (SLIST_ family) of macros will be used to implement a stack.
+ * SLIST_INSERT_HEAD() works like push() and SLIST_FIRST()/SLIST_REMOVE_HEAD()
+ * paired work like pop(). malloc() your items to push, free() your pop'ed.
+ */
+#include <sys/queue.h>
+
 #include "mazes.h"
+
 
 /* binary tree maze, iterategrid() call back */ 
 int
@@ -411,3 +420,88 @@ huntandkill(GRID *g)
   return 0;
 } /* huntandkill() */
 
+
+int
+backtracker(GRID *g)
+{
+  CELL *cc, *nc;
+  SLIST_HEAD(bthead_s, backtrack_s) stack;
+  backtrack_stack_t *step;
+
+  int edges;
+  int tovisit;
+  int go, dir;
+
+  if(!g) { return -1; }
+  SLIST_INIT(&stack);
+
+
+  /* start anywhere */
+  cc = visitrandom(g);
+  if(!cc) { return -1; }
+  tovisit = g->max - 1;
+  cc->ctype = VISITED;
+
+  while(tovisit) {
+
+    /* let's wander */
+
+    edges = edgestatusbycell(g,cc);
+
+    step = (backtrack_stack_t*) malloc( sizeof(backtrack_stack_t) );
+    step->cell  = cc;
+
+    /* push */
+    SLIST_INSERT_HEAD(&stack, step, trail);
+
+    dir = (random() % FOURDIRECTIONS);
+    for (int a = 0; a < 4; a ++) {
+      go = FIRSTDIR + (dir + a) % 4;
+      if((go == NORTH) && (edges & NORTH_EDGE)) { continue; }
+      if((go == SOUTH) && (edges & SOUTH_EDGE)) { continue; }
+      if((go == WEST ) && (edges &  WEST_EDGE)) { continue; }
+      if((go == EAST ) && (edges &  EAST_EDGE)) { continue; }
+
+      nc = visitdir(g, cc, go, ANY);
+      if(!nc) { return -1; }
+      if(nc->ctype == UNVISITED) { break; }
+    } /* pick a good direction */
+
+
+    /* this might fail if we tried all of the directions and found none
+     * unvisited
+     */
+    if(nc->ctype == UNVISITED) {
+      nc->ctype = VISITED;
+      tovisit --;
+      connectbycell(cc, go, nc, SYMMETRICAL);
+      cc = nc;
+
+      continue; /* wander some more */
+    }
+
+    /* the new cell (nc) was a dead end, backtrack */
+    if(tovisit) {
+      while(!SLIST_EMPTY(&stack)) {
+	/* pop */
+        step = SLIST_FIRST(&stack); SLIST_REMOVE_HEAD(&stack, trail);
+	cc = step->cell;
+	free(step);
+	if( ncountbycell(g, cc, OF_TYPE, UNVISITED) ) {
+	  break;
+	}
+
+      }
+    } /* still have something to visit (backtrack phase) */
+
+  } /* while cells to visit (main loop) */
+
+  /* clean up rest of stack */
+  while(!SLIST_EMPTY(&stack)) {
+    /* pop */
+    step = SLIST_FIRST(&stack); SLIST_REMOVE_HEAD(&stack, trail);
+    free(step);
+  }
+    
+  return 0;
+} /* backtracker() */
