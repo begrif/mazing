@@ -25,6 +25,9 @@
 #define ANY             -3
 #define EITHER          -4
 #define THIS            -5
+#define EXITS		-6
+#define NEIGHBORS	-7
+#define OF_TYPE		-8
 
 /* for use with the edgestatus functions */
 #define NORTH_EDGE              0x001
@@ -110,6 +113,7 @@ CELL *visitrandom(GRID *);
  * edgestatus returns information about edges
  * wallstatus returns information about walls
  * natdirection returns a direction between cells (but not for any pair)
+ * ncount returns a count of neighbors for a cell
  */
 void connectbycell(CELL *, int /* cell1 -> cell2 direction */,
              CELL *, int /* cell2 -> cell1 direction */);
@@ -135,6 +139,11 @@ int edgestatusbyid(GRID *, int /*id*/);
 int natdirectionbycell(CELL *, CELL *);
 int natdirectionbyrc(GRID *, int /*r1*/, int /*c1*/, int /*r2*/, int /*c2*/);
 int natdirectionbyid(GRID *, int /*id1*/, int /*id1*/);
+
+int ncountbycell(GRID *, CELL *, int /*counting concern*/, int /*ctype*/);
+int ncountbyrc(GRID *, int /*row*/, int/*col*/,
+			int /*counting concern*/, int /*ctype*/);
+int ncountbyid(GRID *, int /*id*/, int /*counting concern*/, int /*ctype*/);
 
 int wallstatusbycell(CELL *);
 int wallstatusbyrc(GRID *, int /*row*/, int/*col*/);

@@ -7,6 +7,10 @@
 
 #include "grid.h"
 
+#define NONCENTER 11
+#define CENTERED 17
+
+
 int
 visit_should_work(GRID *g,int i, int j)
 {
@@ -108,10 +112,10 @@ main(int ignored, char**notused)
 {
   GRID *g;
   CELL *c1, *c2, *c3, *c4;
-  int d, edges, walls;
+  int d, edges, walls, count;
   int gr, gc;
   int mr1, mr2, mc1, mc2;
-  int id, rc;
+  int id, rc, errorblock = 1;
   insum total = { 0 };
   char *board;
   const char expectedboard[] = "+---+---+---+\n"
@@ -127,30 +131,32 @@ main(int ignored, char**notused)
   g = creategrid(gr,gc,1);
   if(!g) {
     printf("creategrid( %d x %d ) failed.\n", gr, gc);
-    return(1);
+    return(errorblock);
   }
 
   if(visit_should_fail(g, -1, 2)) {
     printf("out of bounds test failed\n");
-    return(2);
+    return(errorblock);
   }
   if(visit_should_fail(g, 18, 1)) {
     printf("out of bounds test failed\n");
-    return(2);
+    return(errorblock);
   }
   if(visit_should_fail(g, 1, 18)) {
     printf("out of bounds test failed\n");
-    return(2);
+    return(errorblock);
   }
 
   if(visit_should_work(g, 0, 0)) {
     printf("real cell visit failed\n");
-    return(3);
+    return(errorblock);
   }
   if(visit_should_work(g, gr-1, gc-1)) {
     printf("real cell visit failed\n");
-    return(3);
+    return(errorblock);
   }
+
+  errorblock ++;
 
   printf("Bulk naming with W/E connect on odd rows\n");
   for(int col = 0; col < gc; col ++) {
@@ -170,21 +176,21 @@ main(int ignored, char**notused)
   c1 = visitrc(g,mr1,mc1);
   if(!c1) { 
     printf("first cell lookup for manual connection failed\n");
-    return(4);
+    return(errorblock);
   }
   namebycell(c1, "C1: starting point");
   id = c1->id;
   c4 = visitid(g,id);
   if((c4->row != mr1) || (c4->col != mc1)) {
     printf("visitbyid didn't match\n");
-    return(4);
+    return(errorblock);
   }
 
   c2 = visitrc(g,mr2,mc2);
   namebycell(c2, "C2: ending point");
   if(!c2) { 
     printf("second cell lookup for manual connection failed\n");
-    return(4);
+    return(errorblock);
   }
 
   printf("Adding a connection to SOUTH of C1\n");
@@ -193,7 +199,7 @@ main(int ignored, char**notused)
   printf("Checking connection from southern cell\n");
   if(visit_should_work(g, mr2, mc2)) {
     printf("real cell visit failed\n");
-    return(4);
+    return(errorblock);
   }
   d = isconnectedbycell(c2, c1, NORTH);
   if( d != NORTH ) {
@@ -208,27 +214,29 @@ main(int ignored, char**notused)
     } else {
       printf("c3->row %d != %d || c3->col %d != %d\n",c3->row,mr2,c3->col,mc2);
     }
-    return(4);
+    return(errorblock);
   }
 
   printf("Now trying to directly visit NORTH from id %d.\n", c2->id);
   c1 = visitdir(g, c2, NORTH, SYMMETRICAL);
   if(!c1) {
     printf("That visit failed.\n");
-    return(4);
+    return(errorblock);
   } else {
     d = isconnectedbycell(c1, c2, ANY);
     printf("That visit the direction from c1 to c2 is %s.\n", dirtoname(d));
     if (d != SOUTH) {
       printf("Whelp, that failed\n");
-      return(4);
+      return(errorblock);
     }
   }
+
+  errorblock ++;
 
   c1 = visitrandom(g);
   if(!c1) {
     printf("Random visit failed.\n");
-    return(5);
+    return(errorblock);
   } else {
     int rc;
 
@@ -238,14 +246,14 @@ main(int ignored, char**notused)
     rc = iteraterow(g, c1->row, printidandname, NULL);
     if(rc != g->cols) {
       printf("Not enough cols. rc %d != %d\n", rc, g->cols);
-      return(5);
+      return(errorblock);
     }
 
     printf("Printing details of col %d\n", c1->col);
     rc = iteratecol(g, c1->col, printidandname, NULL);
     if(rc != g->rows) {
       printf("Not enough rows. rc %d != %d\n", rc, g->rows);
-      return(5);
+      return(errorblock);
     }
   }
 
@@ -253,20 +261,22 @@ main(int ignored, char**notused)
   c2 = visitdir(g, c4, NORTH, ANY);
   if(!c2) {
     printf("Didn't work. ugh.\n");
-    return(6);
+    return(errorblock);
   }
+
+  errorblock ++;
 
 
   for(int d = FIRSTDIR; d < FOURDIRECTIONS; d++) {
     if(tryconnect(g, c2, d)) {
-      return(6);
+      return(errorblock);
     }
   }
   
   rc = iterategrid(g, counter, &total);
   if(rc != total.total) {
     printf("Iterate grid got inconsistent results, %d != %d\n", rc, total.total);
-    return(7);
+    return(errorblock);
   } else {
     printf("Iterated over whole grid\n");
   }
@@ -280,8 +290,9 @@ main(int ignored, char**notused)
   freegrid(g);
 
   printf("\nNew 3x3 grid\n");
+  errorblock ++;
 
-  g = creategrid(3,3,2);
+  g = creategrid(3,3,NONCENTER);
   c1 = visitrc(g,1,1);
   edges = edgestatusbycell(g,c1);
   walls = wallstatusbycell(c1);
@@ -290,18 +301,18 @@ main(int ignored, char**notused)
     printf("No edges on middle cell, correct.\n");
   } else {
     printf("Found edges on middle cell, wrong.\n");
-    return(7);
+    return(errorblock);
   }
 
   if(walls == NO_WALLS) {
     printf("Missing walls on middle cell, wrong.\n");
-    return(7);
+    return(errorblock);
   } else {
     printf("No walls on middle cell, correct.\n");
-    if(walls & NORTH_WALL) { } else { printf("But missing north\n"); return 7;}
-    if(walls & SOUTH_WALL) { } else { printf("But missing south\n"); return 7;}
-    if(walls & EAST_WALL ) { } else { printf("But missing east\n"); return 7;}
-    if(walls & WEST_WALL ) { } else { printf("But missing west\n"); return 7;}
+    if(walls & NORTH_WALL) { } else { printf("But missing north\n"); return errorblock;}
+    if(walls & SOUTH_WALL) { } else { printf("But missing south\n"); return errorblock;}
+    if(walls & EAST_WALL ) { } else { printf("But missing east\n"); return errorblock;}
+    if(walls & WEST_WALL ) { } else { printf("But missing west\n"); return errorblock;}
   }
 
   edges = edgestatusbyid(g,0);
@@ -309,21 +320,22 @@ main(int ignored, char**notused)
     printf("NW corner cell, correct.\n");
   } else {
     printf("Wrong edges on NW corner\n");
-    return(7);
+    return(errorblock);
   }
+  errorblock ++;
 
   edges = edgestatusbyrc(g,2,2);
   if(edges == SOUTHEAST_CORNER) {
     printf("SE corner cell, correct.\n");
   } else {
     printf("Wrong edges on SE corner\n");
-    return(7);
+    return(errorblock);
   }
 
   printf("Knocking down all walls on middle cell.\n");
   for(int d = FIRSTDIR; d < FOURDIRECTIONS; d++) {
     if(tryconnect(g, c1, d)) {
-      return(6);
+      return(errorblock);
     }
   }
   namebycell(c1, " X");
@@ -332,8 +344,49 @@ main(int ignored, char**notused)
     printf("Now correctly no walls\n");
   } else {
     printf("What? Still walls on middle cell, wrong.\n");
-    return(7);
+    return(errorblock);
   }
+
+  errorblock ++;
+  count = ncountbycell(g, c1, EXITS, 0);
+  if(count == 4) {
+    printf("Exit count correct (center)\n");
+  } else {
+    printf("Exit count wrong (center), want 4 got %d\n",count);
+    return(errorblock);
+  }
+  count = ncountbycell(g, c1, NEIGHBORS, 0);
+  if(count == 4) {
+    printf("Neighbor count correct (center)\n");
+  } else {
+    printf("Neighbor count wrong (center), want 4 got %d\n",count);
+    return(errorblock);
+  }
+  c1->ctype = CENTERED;
+  c1 = visitrc(g,0,1);
+  count = ncountbycell(g, c1, EXITS, 0);
+  if(count == 1) {
+    printf("Exit count correct (top-mid)\n");
+  } else {
+    printf("Exit count wrong (top-mid), want 1 got %d\n",count);
+    return(errorblock);
+  }
+  count = ncountbycell(g, c1, NEIGHBORS, 0);
+  if(count == 3) {
+    printf("Neighbor count correct (top-mid)\n");
+  } else {
+    printf("Neighbor count wrong (top-mid), want 3 got %d\n",count);
+    return(errorblock);
+  }
+  count = ncountbycell(g, c1, OF_TYPE, CENTERED);
+  if(count == 1) {
+    printf("Visited neighbor count correct (top-mid)\n");
+  } else {
+    printf("Visited neighbor count wrong (top-mid), want 1 got %d\n",count);
+    return(errorblock);
+  }
+
+  errorblock ++;
 
 
   board = ascii_grid(g, 1);
@@ -342,7 +395,7 @@ main(int ignored, char**notused)
     printf("ASCII art as expected\n");
   } else {
     printf("ASCII art wrong\n");
-    return(7);
+    return(errorblock);
   }
 
   freegrid(g);

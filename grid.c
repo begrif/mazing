@@ -357,6 +357,63 @@ edgestatusbyid(GRID *g, int id)
   return edgestatusbycell(g, visitid(g,id));
 } /* edgestatusbyid */
 
+/* Neighbor counting.
+ * There are three ways to count neighbors:
+ *   1. Any neighbors at all (concern==NEIGHBORS), which will be 2
+ *      on a typical corner and 4 on a typical interior cell.
+ *   2. Any neighbors we can exit to (concern==EXITS), which will be
+ *      1 on a dead end, 0 on all cells of a brand new grid, and 4
+ *      at most.
+ *   3. Any neighbors with a particular ctype (concern==OF_TYPE).
+ *      This is the only counting method that uses the t value.
+ * Returns a negative value on error.
+ */
+int
+ncountbycell(GRID *g, CELL *c, int concern, int t)
+{
+  int count = 0;
+  if(!g) { return NC; }
+  
+  for (int d = FIRSTDIR; d < FOURDIRECTIONS; d++) {
+    if(concern==EXITS) {
+      if(c->dir[d] != NC) { count ++; }
+    } else {
+      /* not interested in exits */
+      CELL *nc = visitdir(g, c, d, ANY);
+      
+      if(nc) {
+	switch(concern) {
+	  case NEIGHBORS: count ++;
+			  break;
+	  case OF_TYPE  : if(nc->ctype == t) { count ++; }
+			  break;
+	  default: /* bad concern */
+		   return -2;
+	}
+      }
+    } /* concern NOT exits */
+  } /* for direction */
+
+  return count;
+} /* ncountbycell() */
+
+int
+ncountbyrc(GRID *g, int r, int c, int concern, int t)
+{
+  if(!g) { return NC; }
+
+  return ncountbycell(g, visitrc(g,r,c), concern, t);
+} /* ncountbyrc() */
+
+int
+ncountbyid(GRID *g, int id, int concern, int t)
+{
+  if(!g) { return NC; }
+
+  return ncountbycell(g, visitid(g,id), concern, t);
+} /* ncountbyid() */
+
+
 
 /* for a particular cell, return information about the walls it
  * adjoins. Walls are returned as bit status flags, so check
