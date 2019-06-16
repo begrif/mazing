@@ -27,6 +27,14 @@ Maze demos:
    * Wilson has multiple walks that stop when reaching a visited cell
    * ascii only output
    * prints a blank and a solved version
+5. huntandkill
+   * a random walk that finds a new starting point (slowly) when deadended
+   * ascii only output
+   * prints a blank and a solved version
+6. backtracker
+   * a random walk which backtracks to a new branch point when deadended
+   * ascii only output
+   * prints a blank and a solved version
 
 Code test:
 
