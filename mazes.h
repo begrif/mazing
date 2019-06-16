@@ -32,5 +32,6 @@ int hollow(GRID *, CELL *, void *);
  */
 int aldbro(GRID *);
 int wilson(GRID *);
+int huntandkill(GRID *);
 
 #endif

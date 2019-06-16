@@ -314,4 +314,100 @@ wilson(GRID *g)
   return 0;
 } /* wilson() */
 
+int
+huntandkill(GRID *g)
+{
+  CELL *cc, *nc;
+  int edges;
+  int tovisit;
+  int go, dir;
+
+  if(!g) { return -1; }
+
+  /* first hunt is the easiest */
+  cc = visitrandom(g);
+  if(!cc) { return -1; }
+  cc->ctype = VISITED;
+  tovisit = g->max - 1;
+
+  go = NEEDDIR;
+
+  while(tovisit) {
+
+    /* now some kills */
+
+    edges = edgestatusbycell(g,cc);
+    
+    dir = (random() % FOURDIRECTIONS);
+    for (int a = 0; a < 4; a ++) {
+      go = FIRSTDIR + (dir + a) % 4;
+      if((go == NORTH) && (edges & NORTH_EDGE)) { continue; }
+      if((go == SOUTH) && (edges & SOUTH_EDGE)) { continue; }
+      if((go == WEST ) && (edges &  WEST_EDGE)) { continue; }
+      if((go == EAST ) && (edges &  EAST_EDGE)) { continue; }
+
+      nc = visitdir(g, cc, go, ANY);
+      if(!nc) { return -1; }
+      if(nc->ctype == UNVISITED) { break; }
+    } /* pick a good direction */
+
+
+    /* this might fail if we tried all of the directions and found none
+     * unvisited
+     */
+    if(nc->ctype == UNVISITED) {
+      nc->ctype = VISITED;
+      tovisit --;
+      connectbycell(cc, go, nc, SYMMETRICAL);
+      cc = nc;
+      go = NEEDDIR;
+
+      continue; /* no need to go hunting */
+    }
+
+    /* the new cell (nc) was already dead, let's hunt for a
+     * different one.
+     */
+    if(tovisit) {
+      int id;
+      for (id = 0; id < g->max; id ++) {
+        cc = visitid(g,id);
+	if( cc->ctype == UNVISITED ) {
+	  if( ncountbycell(g, cc, OF_TYPE, VISITED) ) {
+	    /* found a suitable cell:
+	     * not previously visited
+	     * next to a visited
+	     */
+	    cc->ctype = VISITED;
+	    tovisit --;
+	    break;
+	  }
+	}
+      } /* finding a cell */
+
+      /* have a suitable current cell (cc)
+       * find one of the visited neighbors and join them
+       */
+      dir = (random() % FOURDIRECTIONS);
+      edges = edgestatusbycell(g,cc);
+      for (int a = 0; a < 4; a ++) {
+	go = FIRSTDIR + (dir + a) % 4;
+	if((go == NORTH) && (edges & NORTH_EDGE)) { continue; }
+	if((go == SOUTH) && (edges & SOUTH_EDGE)) { continue; }
+	if((go == WEST ) && (edges &  WEST_EDGE)) { continue; }
+	if((go == EAST ) && (edges &  EAST_EDGE)) { continue; }
+
+        nc = visitdir(g, cc, go, ANY);
+	if(nc && (nc->ctype == VISITED) ) {
+          connectbycell(cc, go, nc, SYMMETRICAL);
+	  break;
+	} 
+      } /* pick a random dir and (if okay) make a link */
+    } /* still have something to visit (hunt phase) */
+
+    go = NEEDDIR;
+  } /* while cells to visit (main loop) */
+
+  return 0;
+} /* huntandkill() */
 
