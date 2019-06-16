@@ -151,6 +151,7 @@ hollow(GRID *g, CELL *c, void *unused)
 /* Named for David Aldous and Andrei Broder, this method cannot
  * use the grid iterator because it needs to visit cells randomly,
  * and it needs to be able to revisit cells.
+ * Relies on a grid being marked fully UNVISITED (ctype) to start.
  */
 int
 aldbro(GRID *g)
@@ -198,7 +199,12 @@ aldbro(GRID *g)
   return 0;
 } /* aldbro() */
 
-
+/*
+ * The (David Bruce) Wilson method is a series of random walks, each
+ * ending when finding a perviously visited cell. Loops created during
+ * the walks are removed before carving the path.
+ * Relies on a grid being marked fully UNVISITED (ctype) to start.
+ */
 int
 wilson(GRID *g)
 {
