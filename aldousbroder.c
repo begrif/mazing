@@ -59,7 +59,7 @@ main(int notused, char**ignored)
   puts(board);
   free(board);
 
-  dm = findlongestpath(g);
+  dm = findlongestpath(g, VISITED);
   if(!dm) {
     printf("Ooops, solver broke\n");
   }
