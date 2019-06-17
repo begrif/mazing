@@ -12,6 +12,7 @@
 #define UNVISITED	1
 #define VISITED		2
 #define WALK_CONSIDER   3
+#define MASKED		17
 #define NEEDDIR		(99+DIRECTIONS)
 
 /* for sidewinder */
@@ -41,6 +42,6 @@ int hollow(GRID *, CELL *, void *);
 int aldbro(GRID *);
 int wilson(GRID *);
 int huntandkill(GRID *);
-int backtracker(GRID *);
+int backtracker(GRID *, int /*tovisit*/);
 
 #endif

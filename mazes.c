@@ -430,28 +430,42 @@ huntandkill(GRID *g)
 /*
  * This backtracker is rather like hunt-and-kill, but retreats along
  * it's own path when it needs to find a new starting point.
- * Relies on a grid being marked fully UNVISITED (ctype) to start.
+ *
+ * Relies on a grid being marked UNVISITED (ctype) to start.
+ *
+ * Cells originally not marked UNVISITED (eg MASKED) will not be
+ * part of the maze. When using a mask, it is important to pass
+ * in a count of cells to visit.
+ *
+ * If not using a mask, tovisit can be set to 0 and will be set
+ * automatically from the grid size.
  */
 int
-backtracker(GRID *g)
+backtracker(GRID *g, int tovisit)
 {
   CELL *cc, *nc;
   SLIST_HEAD(bthead_s, backtrack_s) stack;
   backtrack_stack_t *step;
 
   int edges;
-  int tovisit;
   int go, dir;
 
   if(!g) { return -1; }
   SLIST_INIT(&stack);
 
+  if(tovisit < 1) { tovisit = g->max; }
+
 
   /* start anywhere */
   cc = visitrandom(g);
   if(!cc) { return -1; }
-  tovisit = g->max - 1;
+
+  while( cc->ctype != UNVISITED ) {
+    int nid = cc->id + 1;
+    cc = visitid(g, nid % g->max );
+  }
   cc->ctype = VISITED;
+  tovisit --;
 
   while(tovisit) {
 
