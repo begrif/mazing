@@ -7,6 +7,7 @@
 
 #include "grid.h"
 
+
 /* initializes a cell to have no connections
  * of type t
  * with id id
@@ -39,12 +40,40 @@ freecell(CELL *c)
   if(c->data) { free(c->data); }
 } /* freecell() */
 
+/* creates a block of cells, used in creategrid() and grid modifiers */
+static
+CELL *
+createcells(int rows, int cols, int t, int initcells)
+{
+  CELL *block;
+  CELL *c;
+  int count = rows * cols;
+
+  block = (CELL*)calloc((size_t)count, sizeof(CELL));
+  if(!block) {
+    return (CELL*)NULL;
+  }
+
+  if(initcells) {
+    count = 0;
+    for (int row = 0; row < rows; row ++) {
+      for (int col = 0; col < cols; col ++) {
+	c = &(block[count]);
+	initcell(c, t, row, col, count);
+	count ++;
+      }
+    }
+  }
+  return block;
+} /* createcells() */
+
+
 GRID*
 creategrid(int i, int j, int t)
 {
   GRID *g;
-  CELL *c;
   int count;
+  static int grid_ran_srandom = 0;
 
   if((i < 1) || (j < 1)) {
     return (GRID*)NULL;
@@ -59,40 +88,33 @@ creategrid(int i, int j, int t)
   g->planes = 1;	/* up/down later */
   g->gtype = t;
   g->max = count;
-  g->cells = (CELL*)calloc((size_t)count, sizeof(CELL));
+  g->cells = createcells(g->rows, g->cols, t, 1);
   if(!g->cells) {
     free(g);
     return (GRID*)NULL;
   }
 
-  srandom(time(NULL));
-
-  count = 0;
-  for (int row = 0; row < g->rows; row ++) {
-    for (int col = 0; col < g->cols; col ++) {
-      c = &(g->cells[count]);
-      initcell(c, t, row, col, count);
-      count ++;
-    }
+  if(!grid_ran_srandom) {
+    grid_ran_srandom = (int)time(NULL);
+    srandom(grid_ran_srandom);
   }
 
   return g;
 } /* creategrid() */
 
+
 void
 freegrid(GRID* g)
 {
-  int i, j;
+  int id;
   if(!g) {return;}
 
   if(g->name) { free(g->name); }
   if(g->data) { free(g->data); }
 
   if(g->cells) {
-    for(i = 0; i < g->rows; i++) {
-      for(j = 0; j < g->cols; j++) {
-	freecell(visitrc(g,i,j));
-      }
+    for(id = 0; id < g->max; id++) {
+      freecell(visitid(g,id));
     }
     free(g->cells);
   }
@@ -101,6 +123,100 @@ freegrid(GRID* g)
 } /* freegrid() */
 
 
+/* rotate a grid (CW, CCW, 180), flip a grid (TB or LR), or transpose
+ * rows and columns
+ *	ROTATE_CW	aka CLOCKWISE
+ *	ROTATE_CCW	aka COUNTERCLOCKWISE
+ *	ROTATE_180
+ *	FLIP_TOPBOTTOM
+ *	FLIP_LEFTRIGHT
+ *	FLIP_TRANSPOSE	(sum of ROTATE_CCW and FLIP_LEFTRIGHT)
+ *
+ * returns 0 on success
+ * on error, with no modification to the grid, returns NC
+ */
+int
+rotategrid(GRID *g, int rotation)
+{
+  CELL *block;
+  int oc, nc, nrows, ncols;
+  if(!g) { return NC; }
+
+  switch( rotation ) {
+    case ROTATE_CW:      /* fall through */
+    case ROTATE_CCW:
+    case FLIP_TRANSPOSE:
+    		nrows = g->cols;
+		ncols = g->rows;
+		break;
+    
+    case ROTATE_180:     /* fall through */
+    case FLIP_LEFTRIGHT:
+    case FLIP_TOPBOTTOM:
+    		nrows = g->rows;
+		ncols = g->cols;
+		break;
+
+    default: /* unknown rotation */
+                return NC;
+  } /* setup switch(rotation) */
+
+  block = createcells(nrows, ncols, 0, 0);
+  if(!block) {
+    return NC;
+  }
+
+  for(oc = 0; oc < g->max; oc ++) {
+    int oi, oj, ni, nj;
+
+    oi = oc / ( g->cols );
+    oj = oc % ( g->cols );
+
+    switch( rotation ) {
+      case ROTATE_CW:
+      				ni = oj;
+				nj = g->rows - 1 - oi;
+				break ;
+
+      case ROTATE_CCW:
+      				ni = g->cols - 1 - oj;
+				nj = oi;
+				break ;
+
+      case FLIP_TRANSPOSE:
+      				ni = oj;
+				nj = oi;
+				break ;
+
+      case ROTATE_180:
+      				ni = g->rows - 1 - oi;
+				nj = g->cols - 1 - oj;
+				break ;
+
+      case FLIP_LEFTRIGHT:
+      				ni = oi;
+				nj = g->cols - 1 - oj;
+				break ;
+
+      case FLIP_TOPBOTTOM:
+      				ni = g->rows - 1 - oi;
+				nj = oj;
+				break ;
+    } /* action switch(rotation) */
+    
+    nc = ni * ncols + nj;
+    CELL *dst = &(block[nc]);
+    CELL *src = &(g->cells[oc]);
+    memcpy((void *)dst, (void *)src, sizeof(CELL));
+  }
+
+  g->rows = nrows;
+  g->cols = ncols;
+  free(g->cells);
+  g->cells = block;
+
+  return 0;
+} /* rotategrid() */
 
 /* visit a cell by co-ordinates, return pointer or NULL */
 CELL*

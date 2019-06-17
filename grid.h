@@ -29,6 +29,16 @@
 #define NEIGHBORS	-7
 #define OF_TYPE		-8
 
+/* the supported rotations */
+#define ROTATE_CW         90
+#define CLOCKWISE         ROTATE_CW
+#define ROTATE_CCW        -90
+#define COUNTERCLOCKWISE  ROTATE_CCW
+#define ROTATE_180        180
+#define FLIP_LEFTRIGHT    12
+#define FLIP_TOPBOTTOM    21
+#define FLIP_TRANSPOSE    -78	/* transpose is same as both CCW and L-R */
+
 /* for use with the edgestatus functions */
 #define NORTH_EDGE              0x001
 #define WEST_EDGE               0x002
@@ -58,7 +68,9 @@
 
 /* CELLs and GRIDs have "user use" variables that can be changed at
  * will by maze makers, and other variables that should be considered
- * read only.
+ * read only. The cell type value is used by a number of mazes.c
+ * routines, most often looking for VISITED / UNVISITED (defined in mazes.h)
+ * cells.
  */
 typedef struct
 {
@@ -94,9 +106,10 @@ void freecell(CELL*);
 
 GRID *creategrid(int /*rows*/, int /*cols*/, int /*gtype*/);
 void freegrid(GRID *);
-
+int rotategrid(GRID *, int /*rotation flag*/);
 
 /* visit functions return a CELL pointer */
+/* visitid() is the fastest of the lot */
 CELL *visitrc(GRID *, int /*rows*/, int /*cols*/);
 CELL *visitid(GRID *, int /*cellid*/);
 CELL *visitdir(GRID *, CELL */*cell*/, int/*direction*/, int/* connection status */);
@@ -168,7 +181,9 @@ int iterategrid(GRID *, int(*)(GRID *,CELL*,void *), void *);
 /* find the opposite of a direction */
 int opposite( int /*dir*/);
 
-/* turn a direction into a name */
+/* turn a direction into a name (don't confuse with dirname() for file
+ * name manipulation)
+ */
 const char *dirtoname(int /*dir*/);
 
 /* naive ascii art version of a grid */

@@ -10,6 +10,15 @@
 #define NONCENTER 11
 #define CENTERED 17
 
+/* for the case where board output is informational only */
+void
+printboard(GRID *g, int opt)
+{
+  char *board;
+  board = ascii_grid(g, opt);
+  puts(board);
+  free(board);
+}
 
 int
 visit_should_work(GRID *g,int i, int j)
@@ -94,8 +103,10 @@ printidandname(GRID *notused, CELL *c, void *unused)
 typedef struct { int total; } insum;
 
 int
-counter(GRID *notused, CELL *c, void *t_p)
+counter(GRID *g, CELL *c, void *t_p)
 {
+  char scratch[BUFSIZ];
+
   insum *t;
   t = (insum *)t_p;
   t->total ++;
@@ -103,8 +114,39 @@ counter(GRID *notused, CELL *c, void *t_p)
   if(!c) { 
     return -100;
   }
+
+  /* the original id is used for testing rotations */
+  c->ctype = c->id;
+  snprintf(scratch, BUFSIZ, " %d", c->id); 
+  namebyid(g, c->id, scratch); 
    
+  /* the return value is used when testing iterategrid() */
   return 1;
+}
+
+GRID *
+rotationtestgrid()
+{
+  GRID *g;
+  insum total = { 0 };
+  g = creategrid(2,5,1);
+  if(!g) { return(GRID*)NULL; }
+  iterategrid(g, counter, &total);
+  return g;
+}
+
+int
+checkcell(GRID *g, int id, int t)
+{
+  CELL *c = visitid(g, id);
+  if(!c) { return NC; }
+
+  if(c->ctype != t) {
+    printf("Expected new id %d to be old id %d, but it's %d\n",
+    	id, t, c->ctype);
+    return NC;
+  }
+  return 0;
 }
 
 int
@@ -283,9 +325,7 @@ main(int ignored, char**notused)
 
   printf("\nVisual only test of ascii_grid\n");
   namegrid(g, "Test board");
-  board = ascii_grid(g, 1);
-  puts(board);
-  free(board);
+  printboard(g, 1);
 
   freegrid(g);
 
@@ -397,7 +437,82 @@ main(int ignored, char**notused)
     printf("ASCII art wrong\n");
     return(errorblock);
   }
+  free(board);
 
   freegrid(g);
+
+  errorblock ++;
+
+  g = rotationtestgrid();
+  if(!g) { printf("rotation board create failed\n"); return(errorblock); }
+  printf("Unrotated\n");
+  printboard(g,1);
+
+  rc = rotategrid(g, ROTATE_180);
+  if(rc) { printf("rotation board failed\n"); return(errorblock); }
+  printf("ROTATE_180\n");
+  printboard(g,1);
+  if( checkcell(g, 0, 9) || checkcell(g, 4, 5) || checkcell(g, 5, 4)) {
+    printf("Incorrect.\n");  return(errorblock); 
+  }
+  freegrid(g);
+
+  g = rotationtestgrid();
+  if(!g) { printf("rotation board create failed\n"); return(errorblock); }
+  rc = rotategrid(g, FLIP_LEFTRIGHT);
+  if(rc) { printf("rotation board failed\n"); return(errorblock); }
+  printf("FLIP_LEFTRIGHT\n");
+  printboard(g,1);
+  if( checkcell(g, 0, 4) || checkcell(g, 4, 0) || checkcell(g, 5, 9)) {
+    printf("Incorrect.\n");  return(errorblock); 
+  }
+  freegrid(g);
+
+  g = rotationtestgrid();
+  if(!g) { printf("rotation board create failed\n"); return(errorblock); }
+  rc = rotategrid(g, FLIP_TOPBOTTOM);
+  if(rc) { printf("rotation board failed\n"); return(errorblock); }
+  printf("FLIP_TOPBOTTOM\n");
+  printboard(g,1);
+  if( checkcell(g, 0, 5) || checkcell(g, 4, 9) || checkcell(g, 5, 0)) {
+    printf("Incorrect.\n");  return(errorblock); 
+  }
+  freegrid(g);
+
+  g = rotationtestgrid();
+  if(!g) { printf("rotation board create failed\n"); return(errorblock); }
+  rc = rotategrid(g, CLOCKWISE);
+  if(rc) { printf("rotation board failed\n"); return(errorblock); }
+  printf("CLOCKWISE\n");
+  printboard(g,1);
+  if( checkcell(g, 0, 5) || checkcell(g, 4, 7) || checkcell(g, 5, 2)) {
+    printf("Incorrect.\n");  return(errorblock); 
+  }
+  freegrid(g);
+
+  g = rotationtestgrid();
+  if(!g) { printf("rotation board create failed\n"); return(errorblock); }
+  rc = rotategrid(g, COUNTERCLOCKWISE);
+  if(rc) { printf("rotation board failed\n"); return(errorblock); }
+  printf("COUNTERCLOCKWISE\n");
+  printboard(g,1);
+  if( checkcell(g, 0, 4) || checkcell(g, 4, 2) || checkcell(g, 5, 7)) {
+    printf("Incorrect.\n");  return(errorblock); 
+  }
+  freegrid(g);
+
+  g = rotationtestgrid();
+  if(!g) { printf("rotation board create failed\n"); return(errorblock); }
+  rc = rotategrid(g, FLIP_TRANSPOSE);
+  if(rc) { printf("rotation board failed\n"); return(errorblock); }
+  printf("FLIP_TRANSPOSE\n");
+  printboard(g,1);
+  if( checkcell(g, 0, 0) || checkcell(g, 4, 2) || checkcell(g, 5, 7)) {
+    printf("Incorrect.\n");  return(errorblock); 
+  }
+  freegrid(g);
+
+
   return(0);
 }
+
