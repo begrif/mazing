@@ -28,13 +28,18 @@ Maze demos:
    * ascii only output
    * prints a blank and a solved version
 5. huntandkill
-   * a random walk that finds a new starting point (slowly) when deadended
+   * a random walk that finds a new starting point (slowly) when dead-ended
    * ascii only output
    * prints a blank and a solved version
 6. backtracker
-   * a random walk which backtracks to a new branch point when deadended
+   * a random walk which backtracks to a new branch point when dead-ended
    * ascii only output
    * prints a blank and a solved version
+7. backtracker_masked
+   * this is the previous maze method, but now working with a partial grid
+   * a vague circle in the middle of the grid has been MASKED off-limits
+   * ascii only output
+   * prints only a solved version
 
 Code test:
 
@@ -58,6 +63,9 @@ General code
    * finds one shortest path (just one, even if multiple are possible)
    * finds one longest path (just one, even if multiple are possible)
    * not constrained to particular maze topologies
+3. `mazes.c` and `mazes.h`
+   * implementations of grid-to-maze methods
+   * divided into two broad classes, iterategrid() callbacks and others
 
 Short variables by convention:
  * `g` is grid

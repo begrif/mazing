@@ -262,22 +262,43 @@ findpath(DMAP *dm)
   return 0;
 } /* findpath() */
 
+/* Finds the longest path possible in a maze (or a longest, if there
+ * are ties). Since on some grids some cells are not part of a maze,
+ * eg a mask is used, a cell type to start the hunt from is needed.
+ * The type must correspond to at least two cells that are connected
+ * to the rest of the maze, which will be the starting and ending points
+ * for the first pass flood fill. There's no gaurrantee either will be
+ * on the final longest path.
+ */
 DMAP *
-findlongestpath(GRID *g)
+findlongestpath(GRID *g, int t)
 {
   DMAP *first, *second;
   CELL *pa, *pb;
-  int rc, fid;
+  int hid, rc, fid;
 
   if(!g) {
     return NULL;
   }
 
-  pa = visitid(g, 0);
-  pb = visitid(g, g->max - 1);
-  if(!pa || !pb) {
-    return NULL;
-  }
+  /* Hunt from NW for first cell */
+  hid = 0;
+  do {
+    pa = visitid(g, hid);
+    if(!pa) { return NULL; }
+    hid ++;
+  } while (pa->ctype != t);
+
+  /* Hunt from SE for first cell */
+  hid = g->max - 1;
+  do {
+    pb = visitid(g, hid);
+    if(!pb) {
+      return NULL;
+    }
+    hid --;
+  } while (pb->ctype != t);
+
 
   first = createdistancemap(g, pa);
   if(!first) {

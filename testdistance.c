@@ -63,11 +63,12 @@ main(int notused, char**ignored)
   char *board;
   int distance;
   int rc;
+  int errorgroup = 1;
 
   g = creategrid(10,10,1);
   if(!g) {
     printf("Create serpentine grid failed.\n");
-    return 1;
+    return errorgroup;
   }
   iterategrid(g, serpentine, NULL);
 
@@ -81,7 +82,7 @@ main(int notused, char**ignored)
   dm = createdistancemap(g, visitid(g,9) );
   if(!dm) {
     printf("Create distancemap failed.\n");
-    return 1;
+    return errorgroup;
   }
 
   distance = distanceto(dm, visitid(g,99), 1);
@@ -89,28 +90,29 @@ main(int notused, char**ignored)
 
   if(distance != 99) {
     printf("Find distance failed %d\n", distance);
-    return 1;
+    return errorgroup;
   }
   printf("Distance is correctly %d\n", distance);
 
   rc = findpath(dm);
   if( rc != 0 ) {
     printf("Find path failed %d\n", rc);
-    return 1;
+    return errorgroup;
   }
   rc = printpath(dm->path, 101);
   if( rc != 0 ) {
     printf("printpath failed %d\n", rc);
-    return 1;
+    return errorgroup;
   }
 
   freedistancemap(dm);
   freegrid(g);
+  errorgroup ++;
 
   g = creategrid(5,10,1);
   if(!g) {
     printf("Create hollow grid failed.\n");
-    return 2;
+    return errorgroup;
   }
   iterategrid(g, hollow, NULL);
   namebyid(g,  0, " A");
@@ -123,7 +125,7 @@ main(int notused, char**ignored)
   dm = createdistancemap(g, visitid(g,0) );
   if(!dm) {
     printf("Create distancemap failed.\n");
-    return 2;
+    return errorgroup;
   }
 
   distance = distanceto(dm, visitid(g,g->max - 1), 1);
@@ -132,28 +134,29 @@ main(int notused, char**ignored)
   /* 12 because (width+height-2) when no diagonal movement  */
   if(distance != g->cols + g->rows -2) {
     printf("Find distance failed %d\n", distance);
-    return 2;
+    return errorgroup;
   }
   printf("Distance is correctly %d\n", distance);
 
   rc = findpath(dm);
   if( rc != 0 ) {
     printf("Find path failed %d\n", rc);
-    return 2;
+    return errorgroup;
   }
   rc = printpath(dm->path, distance+2);
   if( rc != 0 ) {
     printf("printpath failed %d\n", rc);
-    return 2;
+    return errorgroup;
   }
 
   freedistancemap(dm);
   freegrid(g);
+  errorgroup ++;
 
   g = creategrid(3,3,1);
   if(!g) {
     printf("Create pathless grid failed.\n");
-    return 3;
+    return errorgroup;
   }
   namebyid(g,  0, " A");
   namebyid(g, g->max - 1, " B");
@@ -165,7 +168,7 @@ main(int notused, char**ignored)
   dm = createdistancemap(g, visitid(g,0) );
   if(!dm) {
     printf("Create distancemap failed.\n");
-    return 3;
+    return errorgroup;
   }
 
   distance = distanceto(dm, visitid(g,g->max - 1), 1);
@@ -173,14 +176,14 @@ main(int notused, char**ignored)
 
   if(distance != DISTANCE_ERROR) {
     printf("Find distance failed %d\n", distance);
-    return 3;
+    return errorgroup;
   }
   printf("Distance correctly failed with %d\n", distance);
 
   rc = findpath(dm);
   if( rc == 0 ) {
     printf("findpath should have failed %d\n", rc);
-    return 3;
+    return errorgroup;
   }
   printf("findpath correctly failed with %d\n", rc);
 
@@ -197,27 +200,27 @@ main(int notused, char**ignored)
 
   if(dm->farthest != 6) {
     printf("find farthest got wrong answer: %d\n", dm->farthest);
-    return 4;
+    return errorgroup;
   }
   printf("find farthest got to %d, distance %d\n",
   	dm->farthest_id, dm->farthest);
   freedistancemap(dm);
 
-  dm = findlongestpath(g);
+  dm = findlongestpath(g, g->gtype);
   if(!dm) {
     printf("findlongestpath failed\n");
-    return 4;
+    return errorgroup;
   }
   printf("findlongestpath found:\n");
   ascii_dmap(dm);
   rc = printpath(dm->path, 10);
   if( rc != 0 ) {
     printf("printpath failed %d\n", rc);
-    return 4;
+    return errorgroup;
   }
   if((dm->farthest != 8) || (dm->farthest_id != 2)) {
     printf("incorrect longest path\n");
-    return 4;
+    return errorgroup;
   }
   printf("a longest possible path found\n");
   
@@ -229,41 +232,42 @@ main(int notused, char**ignored)
   c = visitid(g,1);
   if(!c) {
     printf("something broke with the grid\n");
-    return 4;
+    return errorgroup;
   }
   if(strncmp("7", c->name, 1)) {
     printf("unexpected name on cell %d: %s\n", c->id, c->name);
-    return 4;
+    return errorgroup;
   }
   c = visitid(g,2);
   if(!c) {
     printf("something broke with the grid\n");
-    return 4;
+    return errorgroup;
   }
   if(strncmp("END", c->name, 4)) {
     printf("unexpected name on cell %d: %s\n", c->id, c->name);
-    return 4;
+    return errorgroup;
   }
   printf("naming iterator works\n");
 
   freedistancemap(dm);
   freegrid(g);
+  errorgroup ++;
 
   printf("\nCreating micro grid to test path.\n");
   g = creategrid(1,1,3);
   if(!g) {
     printf("Create micro grid failed.\n");
-    return 5;
+    return errorgroup;
   }
-  dm = findlongestpath(g);
+  dm = findlongestpath(g, g->gtype);
   if(!dm) {
     printf("findlongestpath microgrid failed\n");
-    return 5;
+    return errorgroup;
   }
   rc = printpath(dm->path, 2);
   if( rc != 0 ) {
     printf("printpath failed %d\n", rc);
-    return 4;
+    return errorgroup;
   }
   if(dm->path->cell_id != 0) {
     printf("findlongestpath microgrid didn't work\n");
@@ -272,5 +276,36 @@ main(int notused, char**ignored)
 
   freedistancemap(dm);
   freegrid(g);
+  errorgroup ++;
+
+  printf("\nCreating super simple grid to test masking.\n");
+  g = creategrid(1,5, MASKED);
+  if(!g) {
+    printf("Create masking grid failed.\n");
+    return errorgroup;
+  }
+  c = visitid(g, 2); 
+  if(!c) {
+    printf("Cell error\n");
+    return errorgroup;
+  }
+  c->ctype = VISITED;
+  dm = findlongestpath(g, VISITED);
+  if(!dm) {
+    printf("findlongestpath masked grid failed\n");
+    return errorgroup;
+  }
+  rc = printpath(dm->path, 2);
+  if( rc != 0 ) {
+    printf("printpath failed %d\n", rc);
+    return errorgroup;
+  }
+  if(dm->path->cell_id != c->id) {
+    printf("findlongestpath masked grid didn't work\n");
+  }
+  printf("findlongestpath masked grid worked\n");
+
+
+
   return 0;
 }

@@ -1,7 +1,8 @@
 
 CFLAGS = -g
 
-allmazes: binary_tree sidewinder aldousbroder wilson huntkill backtracker
+allmazes: binary_tree sidewinder aldousbroder wilson huntkill backtracker \
+	backtracker_masked
 
 test: testgrid testdistance
 	./testgrid
@@ -20,6 +21,7 @@ aldousbroder: aldousbroder.o distance.o grid.o mazes.o
 wilson: wilson.o distance.o grid.o mazes.o
 huntkill: huntkill.o distance.o grid.o mazes.o
 backtracker: backtracker.o distance.o grid.o mazes.o
+backtracker_masked: backtracker_masked.o distance.o grid.o mazes.o
 
 mazes.o: distance.h grid.h mazes.h
 testgrid.o: grid.h
@@ -33,4 +35,5 @@ aldousbroder.o: grid.h mazes.h distance.h
 wilson.o: grid.h mazes.h distance.h
 huntkill.o: grid.h mazes.h distance.h
 backtracker.o: grid.h mazes.h distance.h
+backtracker_masked.o: grid.h mazes.h distance.h
 
