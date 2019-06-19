@@ -1,8 +1,12 @@
 
 CFLAGS = -g
+LDLIBS = -lpng
+
 
 allmazes: binary_tree sidewinder aldousbroder wilson huntkill backtracker \
 	backtracker_masked
+
+mazeimg: mazeimg.o distance.o grid.o mazes.o
 
 test: testgrid testdistance
 	./testgrid

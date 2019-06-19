@@ -8,6 +8,11 @@ wilson
 huntkill
 backtracker
 backtracker_masked
+mazeimg
 core
 tags
 *.swp
+tmp*png
+tmp*ppm
+tmp*pgm
+tmp*pbm

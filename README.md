@@ -51,6 +51,15 @@ Code test:
    * ascii only output
    * TODO: needs better test cases for longest path solving
 
+In progress:
+
+1. mazeimg
+   * currently maze to image functions and test code for those
+   * png output for RGBA, RGB, GA (gray + alpha) in either 8 or 16 bits
+   * png output for Gray in 1, 2, 4, 8, or 16 bits
+   * pnm (pgm) output for gray in 8 bits
+   * TODO: finish pnm output, finish test code, separate library from test
+
 General code
 ------------
 
