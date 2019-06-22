@@ -7,22 +7,56 @@
 
 #include "grid.h"
 #include "distance.h"
-#include "mazes.h"		/* TESTING */
+#include "mazes.h"		/* FOR TESTING */
 
 /* for intepreting height and width in initmazebitmap */
 #define CELL_SIZE	5
 #define MAZE_SIZE	6
 
-/* used internally for draw_a_line() */
-#define WALL_LINE	255
-#define EDGE_LINE	127
-#define ALPHA_OPAQUE	0xff
+/* used internally for default_colorpicker() */
+/* these are doubled up for 16 bit, eg, GRAY_BG becomes 0x4040 */
+#define ALPHA_OPAQUE     0xff
+
+#define GRAY_WALL_LINE	 0x7f	/* white, unless >= 8 bits */
+#define GRAY_EDGE_LINE	 0x00	/* black all bit depths */
+#define GRAY_FG          0xff	/* white all bit depths */
+#define GRAY_BG          0x40	/* black unless >= 8 bits */
+
+#define R_WALL_LINE      0x41    /* 0x41207a, a purple */
+#define G_WALL_LINE      0x20    /* 0x41207a, a purple */
+#define B_WALL_LINE      0x7a    /* 0x41207a, a purple */
+
+#define R_EDGE_LINE      0x40    /* 0x406079, a slate blue */
+#define G_EDGE_LINE      0x60    /* 0x406079, a slate blue */
+#define B_EDGE_LINE      0x79    /* 0x406079, a slate blue */
+
+#define R_FG             0xdf    /* 0xdffff0, a light blue */
+#define G_FG             0xff    /* 0xdffff0, a light blue */
+#define B_FG             0xf0    /* 0xdffff0, a light blue */
+
+#define R_BG             0xff    /* 0xff8f00, an orange */
+#define G_BG             0x8f    /* 0xff8f00, an orange */
+#define B_BG             0x00    /* 0xff8f00, an orange */
 
 
 #define COLOR_G 	PNG_COLOR_TYPE_GRAY
 #define COLOR_GA        PNG_COLOR_TYPE_GRAY_ALPHA
 #define COLOR_RGB       PNG_COLOR_TYPE_RGB
 #define COLOR_RGBA      PNG_COLOR_TYPE_RGB_ALPHA
+
+/* Color structure used by default color picker.
+ * Set channels and depth before calling the color picker,
+ * get back all the colors. Not all colors might be used
+ * in a particular drawing style.
+ */
+typedef struct colordata_s {
+  int channels;		/* 1: gray; 2: gray alpha; 3: RGB; 4 RGBA */
+  int depth;		/* 1 to 16 bits */
+  int wall[4];		/* wall color in expected order */
+  int edge[4];		/* edge color in expected order */
+  int fg[4];		/* foreground color in ...*/
+  int bg[4];		/* background color in ...*/
+} COLORDATA;
 
 typedef struct mazebitmap_s {
   int rows, cols;
@@ -67,6 +101,12 @@ typedef struct mazebitmap_s {
    */
   int (*cellfunc)(struct mazebitmap_s *, void */*cellimage*/, CELL */*cell*/);
 
+  /* create a COLORDATA structure, set the desired depth and channels
+   * then this function will be called once per cell to get colors for
+   * that cell. (At least that's how used by default drawing routine.)
+   */
+  void (*colorfunc)(struct mazebitmap_s *, CELL */*cell*/, COLORDATA *);
+
   void *udata; /* A pointer to a user data structure */
 
 } MAZEBITMAP;
@@ -95,6 +135,7 @@ createmazebitmap(DMAP *dm)
 
   mb->rowsp    = (png_bytep*)NULL;
   mb->cellfunc = NULL;
+  mb->colorfunc = NULL;
   mb->udata    = NULL;
 
   return mb;
@@ -214,41 +255,132 @@ initmazebitmap(MAZEBITMAP *mb, int h, int w, int ct, int cd, int cellormaze)
 } /* initmazebitmap() */
 
 
-/* extra complicated since trying to accomodate all color/depth pairs */
-static
+void
+fill_cell(png_byte *image, int count, int channels, int twofer, int *colors)
+{
+   int k, id, offset;
+   char *writer;
+
+   for(id = 0; id < count; id ++) {
+     offset = id * channels * twofer;
+     writer = &(image[offset]);
+
+     for (k = 0; k < channels * twofer; k ++) {
+       if(twofer > 1) {
+	 if(k % 2) {
+	   /* odd bytes get lower 8 bits */
+	   writer[k] = colors[k/2] & 0xff;
+	 } else {
+	   /* even bytes get upper */
+	   writer[k] = (colors[k/2] & 0xff00) >> 8;
+	 }
+       } else {
+	 writer[k] = colors[k] & 0xff;
+       }
+     }
+   }
+} /* fill_cell */
+
+/* kinda complicated since trying to accomodate all color/depth pairs */
 void
 draw_a_line(png_byte *image, int r1, int c1,
                          int r2, int c2,
-            int cc, int channels, int twofer,
-	    png_byte linetype)
+            int cwide, int channels, int twofer,
+	    int *colors)
 {
-   int i, j, k, alpha, id, offset;
+   int i, j, k, id, offset;
    char *writer;
    
-   if((channels == 2) || (channels == 4)) {
-     alpha = 1;
-   } else {
-     alpha = 0;
-   }
    for( i = r1; i <= r2; i ++ ) {
      for( j = c1; j <= c2; j ++ ) {
-       id = i * cc + j;
+       id = i * cwide + j;
        offset = id * channels * twofer;
        writer = &(image[offset]);
 
-       for (k = 0; k < (channels - alpha) * twofer; k ++) {
-         writer[k] = linetype;
-       }
-
-       if(alpha) {
-         writer[k] = ALPHA_OPAQUE;
-	 if(twofer > 1) {
-           writer[k+1] = ALPHA_OPAQUE;
+       for (k = 0; k < channels * twofer; k ++) {
+         if(twofer > 1) {
+           if(k % 2) {
+	     /* odd bytes get lower 8 bits */
+	     writer[k] = colors[k/2] & 0xff;
+	   } else {
+	     /* even bytes get upper */
+	     writer[k] = (colors[k/2] & 0xff00) >> 8;
+	   }
+	 } else {
+	   writer[k] = colors[k] & 0xff;
 	 }
        }
      }
    }
 } /* draw_a_line() */
+
+/* if colorfunc is undefined when default_drawcell is used to draw a maze,
+ * this colorpicker routine kicks in.
+ */
+void
+default_colorpicker(struct mazebitmap_s *mb, CELL *c, COLORDATA *cd)
+{
+  int i, percent, adjust;
+
+  /* We're lazy and always put in the alpha, so test gray or not gray */
+  if ( cd->channels < 3 ) {
+    cd->wall[0] = GRAY_WALL_LINE;
+    cd->edge[0] = GRAY_EDGE_LINE;
+    cd->fg[0]   = GRAY_FG;
+    cd->bg[0]   = GRAY_BG;
+    cd->wall[1] = cd->edge[1] = cd->fg[1] = cd->bg[1] = ALPHA_OPAQUE;
+    cd->wall[2] = cd->edge[2] = cd->fg[2] = cd->bg[2] =
+    cd->wall[3] = cd->edge[3] = cd->fg[3] = cd->bg[3] = 0;
+    /* end setting grays */
+  } else {
+    /* setting not gray */
+    cd->wall[0] = R_WALL_LINE;
+    cd->edge[0] = R_EDGE_LINE;
+    cd->fg[0]   = R_FG;
+    cd->bg[0]   = R_BG;
+    cd->wall[1] = G_WALL_LINE;
+    cd->edge[1] = G_EDGE_LINE;
+    cd->fg[1]   = G_FG;
+    cd->bg[1]   = G_BG;
+    cd->wall[2] = B_WALL_LINE;
+    cd->edge[2] = B_EDGE_LINE;
+    cd->fg[2]   = B_FG;
+    cd->bg[2]   = B_BG;
+    cd->wall[3] = cd->edge[3] = cd->fg[3] = cd->bg[3] = ALPHA_OPAQUE;
+    /* end setting colors */
+  }
+
+  if( cd->depth > 8 ) {
+    for(i = 0; i < 4; i++) {
+      /* multiplying an 8 bit number by 0x101 works just like
+       * multiplying a 2 digit decimal number by 101.
+       */
+      cd->wall[i] = cd->wall[i] * 0x101;
+      cd->edge[i] = cd->edge[i] * 0x101;
+      cd->fg[i]   = cd->fg[i]   * 0x101;
+      cd->bg[i]   = cd->bg[i]   * 0x101;
+    }
+  } /* if adjusting for depth */
+
+  /* if a color image, at least depth 8, with a fully calculated distance
+   * map and that map has non-trivial distances, then adjust background
+   * color by distance.
+   */
+  if((cd->depth > 7) && (cd->channels > 2) && 
+      mb && mb->dmap && (mb->dmap->farthest > 3)) {
+
+    adjust = mb->dmap->map[c->id];
+    if (adjust < 2) { adjust = 2; } /* threshold minimum */
+    adjust = adjust * 100;
+    percent = (adjust / mb->dmap->farthest);
+
+    for(i = 0; i < 4; i++) {
+      cd->bg[i]   = (cd->bg[i] * percent) / 100;
+    }
+    
+  } /* if let's vary color with distance */
+
+} /* default_colorpicker */
 
 /* if cellfunc is undefined when asked to draw a maze, this drawing
  * routine kicks in.
@@ -261,31 +393,38 @@ default_drawcell(MAZEBITMAP *mb, png_byte *image, CELL *c)
   int twofer = mb->doubled + 1;
   int wid = mb->cell_w;
   int hei = mb->cell_h;
+  COLORDATA colors;
+
+  colors.depth    = mb->colordepth;
+  colors.channels = mb->channels;
+  default_colorpicker(mb, c, &colors);
+
+  fill_cell(image, wid * hei, siz, twofer, &(colors.bg[0]));
 
   walls = wallstatusbycell(c);
   if(walls & NORTH_WALL) {
     i1 = i2 = 0;
     j1 = 0;
     j2 = wid - 1;
-    draw_a_line(image, i1, j1, i2, j2, wid, siz, twofer, WALL_LINE);
+    draw_a_line(image, i1, j1, i2, j2, wid, siz, twofer, &(colors.wall[0]));
   }
   if(walls & SOUTH_WALL) {
     i1 = i2 = hei - 1;
     j1 = 0;
     j2 = wid - 1;
-    draw_a_line(image, i1, j1, i2, j2, wid, siz, twofer, WALL_LINE);
+    draw_a_line(image, i1, j1, i2, j2, wid, siz, twofer, &(colors.wall[0]));
   }
   if(walls & WEST_WALL) {
     j1 = j2 = 0;
     i1 = 0;
     i2 = hei - 1;
-    draw_a_line(image, i1, j1, i2, j2, wid, siz, twofer, WALL_LINE);
+    draw_a_line(image, i1, j1, i2, j2, wid, siz, twofer, &(colors.wall[0]));
   }
   if(walls & EAST_WALL) {
     j1 = j2 = wid - 1;
     i1 = 0;
     i2 = hei - 1;
-    draw_a_line(image, i1, j1, i2, j2, wid, siz, twofer, WALL_LINE);
+    draw_a_line(image, i1, j1, i2, j2, wid, siz, twofer, &(colors.wall[0]));
   }
 
   edges = edgestatusbycell(mb->dmap->grid, c);
@@ -293,25 +432,25 @@ default_drawcell(MAZEBITMAP *mb, png_byte *image, CELL *c)
     i1 = i2 = 0;
     j1 = 0;
     j2 = wid - 1;
-    draw_a_line(image, i1, j1, i2, j2, wid, siz, twofer, EDGE_LINE);
+    draw_a_line(image, i1, j1, i2, j2, wid, siz, twofer, &(colors.edge[0]));
   }
   if(edges & SOUTH_EDGE) {
     i1 = i2 = hei - 1;
     j1 = 0;
     j2 = wid - 1;
-    draw_a_line(image, i1, j1, i2, j2, wid, siz, twofer, EDGE_LINE);
+    draw_a_line(image, i1, j1, i2, j2, wid, siz, twofer, &(colors.edge[0]));
   }
   if(edges & WEST_EDGE) {
     j1 = j2 = 0;
     i1 = 0;
     i2 = hei - 1;
-    draw_a_line(image, i1, j1, i2, j2, wid, siz, twofer, EDGE_LINE);
+    draw_a_line(image, i1, j1, i2, j2, wid, siz, twofer, &(colors.edge[0]));
   }
   if(edges & EAST_EDGE) {
     j1 = j2 = wid - 1;
     i1 = 0;
     i2 = hei - 1;
-    draw_a_line(image, i1, j1, i2, j2, wid, siz, twofer, EDGE_LINE);
+    draw_a_line(image, i1, j1, i2, j2, wid, siz, twofer, &(colors.edge[0]));
   }
 
   return 1;
@@ -646,8 +785,59 @@ main()
   CELL *c;
   DMAP *dm;
   MAZEBITMAP *mb;
-  int rc, errorgroup = 1;
+  int rc, errorgroup = 1, times;
+  char fname[80];
+  int usecolor;
+  int usedepth;
 
+for(times = 0; times < 11; times ++) {
+  switch (times) {
+     case 0: usecolor = COLOR_G;
+             usedepth = 1;
+	     snprintf(fname, 80, "tmp-gray-1.png");
+	     break;
+     case 1: usecolor = COLOR_G;
+             usedepth = 2;
+	     snprintf(fname, 80, "tmp-gray-2.png");
+	     break;
+     case 2: usecolor = COLOR_G;
+             usedepth = 4;
+	     snprintf(fname, 80, "tmp-gray-4.png");
+	     break;
+     case 3: usecolor = COLOR_G;
+             usedepth = 8;
+	     snprintf(fname, 80, "tmp-gray-8.png");
+	     break;
+     case 4: usecolor = COLOR_G;
+             usedepth = 16;
+	     snprintf(fname, 80, "tmp-gray-16.png");
+	     break;
+     case 5: usecolor = COLOR_GA;
+             usedepth = 8;
+	     snprintf(fname, 80, "tmp-grayalpha-8.png");
+	     break;
+     case 6: usecolor = COLOR_GA;
+             usedepth = 16;
+	     snprintf(fname, 80, "tmp-grayalpha-16.png");
+	     break;
+     case 7: usecolor = COLOR_RGB;
+             usedepth = 8;
+	     snprintf(fname, 80, "tmp-rgb-8.png");
+	     break;
+     case 8: usecolor = COLOR_RGB;
+             usedepth = 16;
+	     snprintf(fname, 80, "tmp-rgb-16.png");
+	     break;
+     case 9: usecolor = COLOR_RGBA;
+             usedepth = 8;
+	     snprintf(fname, 80, "tmp-rgbalpha-8.png");
+	     break;
+     case 10: usecolor = COLOR_RGBA;
+             usedepth = 16;
+	     snprintf(fname, 80, "tmp-rgbalpha-16.png");
+	     break;
+  }
+  
   g = creategrid(16,16,1);
   if(!g) {
     printf("Create serpentine grid failed.\n");
@@ -677,14 +867,14 @@ main()
     return errorgroup;
   }
 
-  rc = initmazebitmap(mb, 15, 15, COLOR_G, 1, CELL_SIZE);
+  rc = initmazebitmap(mb, 15, 15, usecolor, usedepth, CELL_SIZE);
   if( rc < 0 ) {
     printf("init mazebitmap failed %d\n", rc);
     return errorgroup;
   } else if (rc == 0){
     printf("init mazebitmap returned 0, good for only PNM\n");
   } else if (rc == 1){
-    printf("init mazebitmap returned 1, good for all images\n");
+    printf("init mazebitmap returned 1, suitable for all images\n");
   } else {
     printf("init mazebitmap returned %d\n", rc);
   }
@@ -703,13 +893,15 @@ main()
 //  if(!rc) {
 //    printf("Wrote tmp.pgm\n");
 //  }
-  rc = writepng(mb, "tmp.png");
+  rc = writepng(mb, fname);
   if(!rc) {
-    printf("Wrote tmp.png\n");
+    printf("Wrote %s\n",fname);
   }
 
   freemazebitmap(mb);
   freedistancemap(dm);
   freegrid(g);
+
+}
   return 0;
 }
