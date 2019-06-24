@@ -1,6 +1,8 @@
 *.o
 testgrid
 testdistance
+testmazeimg
+testmazeimgstdout
 binary_tree
 sidewinder
 aldousbroder
@@ -8,11 +10,11 @@ wilson
 huntkill
 backtracker
 backtracker_masked
-mazeimg
 core
 tags
 *.swp
 tmp*png
+tmp*pnm
 tmp*ppm
 tmp*pgm
 tmp*pbm

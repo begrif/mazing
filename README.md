@@ -50,15 +50,17 @@ Code test:
    * code to test distance.c functions
    * ascii only output
    * TODO: needs better test cases for longest path solving
+3. testmazeimg   
+   * code to test maze to image functions
+   * makes many color variation versions of serpentine maze
+   * PNG and PNM output
+4. testmazeimgstdout
+   * code to test maze to image writepnm() for standard out case
+   * demos a custom drawcell() function
+   * PNM output of a single solved maze
 
 In progress:
 
-1. mazeimg
-   * currently maze to image functions and test code for those
-   * png output for RGBA, RGB, GA (gray + alpha) in either 8 or 16 bits
-   * png output for Gray in 1, 2, 4, 8, or 16 bits
-   * pnm (pgm) output for gray in 8 bits
-   * TODO: finish pnm output, finish test code, separate library from test
 
 General code
 ------------
@@ -75,6 +77,12 @@ General code
 3. `mazes.c` and `mazes.h`
    * implementations of grid-to-maze methods
    * divided into two broad classes, iterategrid() callbacks and others
+4. `mazeimg.c` and `mazeimg.h`
+   * maze to image functions
+   * draws cells are raw bitmaps, stores whole maze image as raw PNG input
+   * PNG output for RGBA, RGB, GA (gray + alpha) in either 8 or 16 bits
+   * PNG output for Gray in 1, 2, 4, 8, or 16 bits
+   * PNM (PBM/PGM/PPM/PAM) for all PNG supported color and grayscale depths
 
 Short variables by convention:
  * `g` is grid
@@ -86,6 +94,7 @@ Short variables by convention:
  * `go` is a direction
  * `dm` is a distance map
  * `rc` is a return code
+ * `mb` is a maze bitmap structure
 
 
 Author
