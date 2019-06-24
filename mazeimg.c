@@ -3,114 +3,14 @@
 /* uses libpng.h */
 
 #include <stdlib.h>
-#include <png.h>
 
-#include "grid.h"
-#include "distance.h"
-#include "mazes.h"		/* FOR TESTING */
-
-/* for intepreting height and width in initmazebitmap */
-#define CELL_SIZE	5
-#define MAZE_SIZE	6
-
-/* used internally for default_colorpicker() */
-/* these are doubled up for 16 bit, eg, GRAY_BG becomes 0x4040 */
-#define ALPHA_OPAQUE     0xff
-
-#define GRAY_WALL_LINE	 0x7f	/* white, unless >= 8 bits */
-#define GRAY_EDGE_LINE	 0x00	/* black all bit depths */
-#define GRAY_FG          0xff	/* white all bit depths */
-#define GRAY_BG          0x40	/* black unless >= 8 bits */
-
-#define R_WALL_LINE      0x41    /* 0x41207a, a purple */
-#define G_WALL_LINE      0x20    /* 0x41207a, a purple */
-#define B_WALL_LINE      0x7a    /* 0x41207a, a purple */
-
-#define R_EDGE_LINE      0x40    /* 0x406079, a slate blue */
-#define G_EDGE_LINE      0x60    /* 0x406079, a slate blue */
-#define B_EDGE_LINE      0x79    /* 0x406079, a slate blue */
-
-#define R_FG             0xdf    /* 0xdffff0, a light blue */
-#define G_FG             0xff    /* 0xdffff0, a light blue */
-#define B_FG             0xf0    /* 0xdffff0, a light blue */
-
-#define R_BG             0xff    /* 0xff8f00, an orange */
-#define G_BG             0x8f    /* 0xff8f00, an orange */
-#define B_BG             0x00    /* 0xff8f00, an orange */
+#include "mazeimg.h"
 
 
-#define COLOR_G 	PNG_COLOR_TYPE_GRAY
-#define COLOR_GA        PNG_COLOR_TYPE_GRAY_ALPHA
-#define COLOR_RGB       PNG_COLOR_TYPE_RGB
-#define COLOR_RGBA      PNG_COLOR_TYPE_RGB_ALPHA
-
-/* Color structure used by default color picker.
- * Set channels and depth before calling the color picker,
- * get back all the colors. Not all colors might be used
- * in a particular drawing style.
+/* Creates MAZEBITMAP structure and has a cursory initialization from
+ * settings in a distance map.
+ * returns NULL on error
  */
-typedef struct colordata_s {
-  int channels;		/* 1: gray; 2: gray alpha; 3: RGB; 4 RGBA */
-  int depth;		/* 1 to 16 bits */
-  int wall[4];		/* wall color in expected order */
-  int edge[4];		/* edge color in expected order */
-  int fg[4];		/* foreground color in ...*/
-  int bg[4];		/* background color in ...*/
-} COLORDATA;
-
-typedef struct mazebitmap_s {
-  int rows, cols;
-  int cell_w, cell_h;
-  int img_w, img_h;
-
-  int colortype; /* COLOR_G, COLOR_GA, COLOR_RGB, COLOR_RGBA
-                  * The channels are listed in order expected,
-		  * eg, alpha channel always comes last
-		  */
-
-  int colordepth; /* 1, 2, 4, 8, 16 */
-  		/* But note PNG has type/depth limitations:
-		 * Gray: any depth
-		 * Gray with Alpha: only 8 or 16
-		 * RGB: only 8 or 16
-		 * RGB with Alpha: only 8 or 16
-		 */
-
-  int channels;  /* each of Red, Green, Blue, Gray and Alpha is a channel */
-  int doubled;     /* set if colordepth > 8 */
-
-  int rowsize;	/* cols * (sizeof color type) */
-  int cellsize; /* size of the raw cell for drawcell functions.
-                 * cell_w * cell_h * channels * bytesperchannel
-                 * COLOR_G has one channel, RGBA has four channels
-		 * colordepth of 1, 2, 4, or 8 is one byte per channel,
-		 * colordepth of 16 has two bytes per channel
-		 * Channels are in order suggested by name, eg RGB is
-		 * red, green, blue.
-		 */
-  DMAP *dmap;
-  png_bytep *rowsp;	/* A list of pointers to each row */
-  			/* Each row is basically the raw data */
-
-  /* This is a call back to draw a single cell.
-   * cellimage is a pre-allocated and zeroed block of memory with one or
-   * two bytes per pixel per channel to be filled in as a raw cellimage.
-   * So a 10 x 10 COLOR_G colordepth 1 image gets a 100 byte (10x10x1x1)
-   * cellimage, while a 10 x 10 COLOR_RGBA colordepth 16 gets a 
-   * 800 byte (10x10x4x2) cellimage.
-   */
-  int (*cellfunc)(struct mazebitmap_s *, void */*cellimage*/, CELL */*cell*/);
-
-  /* create a COLORDATA structure, set the desired depth and channels
-   * then this function will be called once per cell to get colors for
-   * that cell. (At least that's how used by default drawing routine.)
-   */
-  void (*colorfunc)(struct mazebitmap_s *, CELL */*cell*/, COLORDATA *);
-
-  void *udata; /* A pointer to a user data structure */
-
-} MAZEBITMAP;
-
 MAZEBITMAP *
 createmazebitmap(DMAP *dm)
 {
@@ -141,9 +41,11 @@ createmazebitmap(DMAP *dm)
   return mb;
 } /* createmazebitmap() */
 
+
 /* Caller is responsible for freeing the distance map and user data */
 void
-freemazebitmap(MAZEBITMAP *mb) {
+freemazebitmap(MAZEBITMAP *mb)
+{
   int i;
 
   if(!mb) { return; }
@@ -155,6 +57,7 @@ freemazebitmap(MAZEBITMAP *mb) {
     free(mb->rowsp);
   }
 } /* freemazebitmap() */
+
 
 /* Takes a height and width, a color type, a color depth, and a
  * flag CELL_SIZE or MAZE_SIZE to interpret the height and width,
@@ -255,6 +158,7 @@ initmazebitmap(MAZEBITMAP *mb, int h, int w, int ct, int cd, int cellormaze)
 } /* initmazebitmap() */
 
 
+/* completely fill a cell with a color */
 void
 fill_cell(png_byte *image, int count, int channels, int twofer, int *colors)
 {
@@ -281,6 +185,12 @@ fill_cell(png_byte *image, int count, int channels, int twofer, int *colors)
    }
 } /* fill_cell */
 
+
+/* Draw a horizontal or vertical line in a cell a cell,
+ * for r1 <= r2 and c1 <= c2. cwide is cell width, channels / twofer
+ * used to understand the colors being used. The colors array is one
+ * of the ones from the COLORDATA struct (or same format).
+ */
 /* kinda complicated since trying to accomodate all color/depth pairs */
 void
 draw_a_line(png_byte *image, int r1, int c1,
@@ -314,11 +224,12 @@ draw_a_line(png_byte *image, int r1, int c1,
    }
 } /* draw_a_line() */
 
+
 /* if colorfunc is undefined when default_drawcell is used to draw a maze,
  * this colorpicker routine kicks in.
  */
 void
-default_colorpicker(struct mazebitmap_s *mb, CELL *c, COLORDATA *cd)
+default_colorpicker(MAZEBITMAP *mb, CELL *c, COLORDATA *cd)
 {
   int i, percent, adjust;
 
@@ -381,6 +292,7 @@ default_colorpicker(struct mazebitmap_s *mb, CELL *c, COLORDATA *cd)
   } /* if let's vary color with distance */
 
 } /* default_colorpicker */
+
 
 /* if cellfunc is undefined when asked to draw a maze, this drawing
  * routine kicks in.
@@ -455,6 +367,7 @@ default_drawcell(MAZEBITMAP *mb, png_byte *image, CELL *c)
 
   return 1;
 } /* default_drawcell */
+
 
 /* can place a cell image (or any other rectangle) onto the full
  * size image. This is divorced from the overall maze bitmap structure
@@ -625,6 +538,7 @@ placerectangle(png_byte *image,    int img_w, int img_h,
 
 } /* placerectangle() */
 
+
 /* Calls the current cellfunc() draw function to draw a cell,
  * then places that on the full bitmap.
  * If cellfunc() returns a negative number, this will abort before
@@ -661,6 +575,9 @@ drawandplacecell(GRID *g,CELL *cell,MAZEBITMAP *mb)
 } /* drawandplacecell() */
 
 
+/* Draws a maze into the maze bitmap. If the cellfunc is not defined,
+ * supplies a default. Then iterates the drawandplacecell() function.
+ */
 int
 drawmaze(MAZEBITMAP *mb)
 {
@@ -679,36 +596,220 @@ drawmaze(MAZEBITMAP *mb)
 } /* drawmaze */
 
 
-/* only writes ascii PGM for now while testing drawing functions */
+/* PNM is a family of easy to read / write file formats that are terrible
+ * long term use, but good for easy file interchange between programs.
+ * The "N" stans for "aNy".
+ *
+ * PBM holds bit maps, eight bits to a byte, each row padded out to a
+ * a full byte, 1 is black, 0 is white.
+ *
+ * PGM holds "graymaps" (grayscale) images, with any "maxval" (eg 255 for
+ * 8 bit). Each value is stored in 1 byte for 8 or fewer bits, and 2 bytes
+ * for 16 or fewer, and in a text numbers separated by whitespace for
+ * crazy depths (not implemented here).
+ *
+ * PPM holds "pixmaps" (RGB) images, in an obvious extension of PGM. Three
+ * bytes per pixel for 8 bit or less, 6 for 16 bits.
+ *
+ * Then there's PAM which is more flexible and can contain basically any
+ * rectangular 2D image, at the expense of fewer programs can read it.
+ * My installed version of Gimp, for example doesn't recognize it, but my
+ * Imagemagick's convert handles it fine. PAM is used for GRAYSCALE_ALPHA
+ * and RGB_ALPHA here. PAM has an explicit maxval of 65535, and does not
+ * have a text format.
+ *
+ * The files have a two byte magic number to identify them:
+ * "P1" text format PBM, "P2" text format PGM, "P3" text format PGM 
+ * "P4" binary format PBM, "P5" binary format PGM, "P6" binary format PGM 
+ * "P7" PAM.
+ *
+ * PBM has the simplest header:
+ *	magic-number <newline>
+ *	zero or more comment lines marked with leading #
+ *	asciiformat-width <whitespace> asciiformat-height <newline>
+ *
+ * PGM and PPM have a third required value in the header:
+ *	magic-number <newline>
+ *	zero or more comment lines marked with leading #
+ *	asciiformat-width <whitespace> asciiformat-height <newline>
+ *	asciiformat-maxvalue <newline>
+ *
+ * The maxvalue (if present in all channels) represents white. Max up
+ * to 255 puts one value per byte, up to 65535 puts one value per two
+ * bytes.
+ *
+ * After the headers, each of those formats just has the binary data dumped.
+ * (Or in text versions, ascii numbers with whitespace between them.)
+ *
+ * PAM is much newer, and a bit more complicated in header, the binary data
+ * format is the obvious extension. We'll use either of two PAM headers:
+ *      P7
+ *      WIDTH asciiformat-width
+ *      HEIGHT asciiformat-height
+ *      DEPTH 2
+ *      MAXVAL asciiformat-maxval
+ *      TUPLTYPE GRAYSCALE_ALPHA
+ *      ENDHDR
+ * or
+ *      P7
+ *      WIDTH asciiformat-width
+ *      HEIGHT asciiformat-height
+ *      DEPTH 4
+ *      MAXVAL asciiformat-maxval
+ *      TUPLTYPE RGB_ALPHA
+ *      ENDHDR
+ *
+ * Where maxval is the largest number storable in that number of bits
+ * (1, 3, 15, 255, 65535). And "DEPTH" is what I call "channels".
+ *
+ * All of these formats are flexible enough to store unusual sample
+ * sizes like 12 bit or 0 to 100 for a channel. I don't support them
+ * with this writer, though.
+ *
+ * The user is expected to provide a suitable suffix, if one is desired.
+ * A filename of '-' will write to STDOUT instead of a file, useful for
+ * pipelines.
+ */
 int
 writepnm(MAZEBITMAP *mb, char *filename)
 {
+  int maxval;
+  int i, j, k, sample;
+  png_byte *row;
+  FILE *fp;
+
   if(!mb) { return -1; }
 
-  FILE *fp = fopen(filename, "w");
+  switch (mb->colordepth) {
+    case  1: maxval =     1; break;
+    case  2: maxval =     3; break;
+    case  4: maxval =    15; break;
+    case  8: maxval =   255; break;
+    case 16: maxval = 65535; break;
+    default: return -1;
+  }
+
+  if((filename[0] == '-') && (filename[1] == 0)) {
+    int fno = fileno(stdout);
+    fp = fdopen(fileno(stdout), "w");
+  } else {
+    fp = fopen(filename, "w");
+  }
+
   if(!fp) {
     fprintf(stderr, "failed to open %s", filename);
     return -1;
   }
 
-  fprintf(fp, "P2\n%d %d\n%d\n", mb->img_w, mb->img_h, 255 /*maxval*/);
-
-  for(int r = 0; r < mb->img_w; r++) {
-    png_byte *row = mb->rowsp[r];
-    for(int c = 0; c < mb->img_h; c++ ) {
-      fprintf(fp, "%3d ", row[c]);
-    }
-    fprintf(fp, "\n");
+  /* It would cool and all if I ever checked return values from fprintf
+   * or putc. Consider it a TODO for "disk full" type scenarios.
+   */
+  if(mb->channels == 2) {
+    /* PAM grayscale */
+    fprintf(fp, "P7\n" );
+    fprintf(fp, "WIDTH %d\n", mb->img_w );
+    fprintf(fp, "HEIGHT %d\n", mb->img_h );
+    fprintf(fp, "DEPTH 2\n" );
+    fprintf(fp, "MAXVAL %d\n", maxval );
+    fprintf(fp, "TUPLTYPE GRAYSCALE_ALPHA\n" );
+    fprintf(fp, "ENDHDR\n" );
+  } else if (mb->channels == 4) {
+    /* PAM RGB */
+    fprintf(fp, "P7\n" );
+    fprintf(fp, "WIDTH %d\n", mb->img_w );
+    fprintf(fp, "HEIGHT %d\n", mb->img_h );
+    fprintf(fp, "DEPTH 4\n" );
+    fprintf(fp, "MAXVAL %d\n", maxval );
+    fprintf(fp, "TUPLTYPE RGB_ALPHA\n" );
+    fprintf(fp, "ENDHDR\n" );
+  } else if ((mb->channels == 1) && (mb->colordepth == 1)) {
+    /* PBM */
+     fprintf(fp, "P4\n%d %d\n", mb->img_w, mb->img_h);
+  } else {
+    /* PGM/PPM */
+    int magic;
+    if(mb->channels == 1) { magic = 5; } else { magic = 6; }
+     fprintf(fp, "P%d\n%d %d\n%d\n", magic, mb->img_w, mb->img_h, maxval);
   }
+
+  if(maxval > 254) {
+    /* easy case, just write everything out just as stored for png */
+    size_t siz = (size_t)(mb->channels + (mb->channels * mb->doubled));
+    for(i = 0; i < mb->img_h; i++) {
+      png_byte *row = mb->rowsp[i];
+      fwrite(row, siz, (size_t)mb->img_w, fp);
+    }
+  } else if ((mb->channels == 1) && (mb->colordepth == 1)) {
+    /* PBM, also kinda easy, trickiest bit is reversal of white / black
+     * from PNG.
+     */
+    png_byte *invert;
+
+    size_t siz = (size_t)(mb->img_w / 8);
+    if(mb->img_w % 8) { siz += 1; }
+
+    invert = (png_byte *)malloc(siz);
+    if(!invert) { return -1; }
+
+    for(i = 0; i < mb->img_h; i++) {
+      png_byte *row = mb->rowsp[i];
+      for(j = 0; j < siz; j++) {
+        invert[j] = ~row[j];
+      }
+      fwrite(invert, (size_t)1, siz, fp);
+    }
+
+    free(invert);
+  } else {
+    /* we need to expand those compacted values */
+    int DEBG; /* DEBUG */
+    for(i = 0; i < mb->img_h; i++) {
+      png_byte *row = mb->rowsp[i];
+      j = k = 0;
+      while(j < mb->img_w) {
+        sample = row[k];
+        switch(mb->colordepth) {
+	  case 4: putc((sample & 0xf0) >> 4, fp);
+	          putc((sample & 0x0f), fp);
+		  j += 2;
+		  k++;
+	          break;
+
+	  case 2: putc((sample & 0xc0) >> 6, fp);
+	          putc((sample & 0x30) >> 4, fp);
+	          putc((sample & 0x0c) >> 2, fp);
+	          putc((sample & 0x03), fp);
+		  j += 4;
+		  k++;
+	          break;
+
+	  case 1: /* Who is going to do this? You'd end up here if
+	           * you have a one bit RGB, RGBA, or GA.
+		   * The rest of my code isn't likely to work for that.
+		   */
+	          putc((sample & 0x80) >> 7, fp);
+	          putc((sample & 0x40) >> 6, fp);
+	          putc((sample & 0x20) >> 5, fp);
+	          putc((sample & 0x10) >> 4, fp);
+	          putc((sample & 0x08) >> 3, fp);
+	          putc((sample & 0x04) >> 2, fp);
+	          putc((sample & 0x02) >> 1, fp);
+	          putc((sample & 0x01), fp);
+		  j += 8;
+		  k++;
+	}; /* switch */
+      } /* for byte in each row */
+    } /* for row */
+  } /* expanding compacted values */
 
   fclose(fp);
   return 0;
-
 } /* writepnm() */
+
 
 /* Write a PNG version of a maze bitmap.
  * This is (currently) the only function that actually uses libpng
- * functions (as opposed to mere #defines).
+ * functions (as opposed to libpng #defines and data types).
  * returns a 0 on success, or a negative value on failure.
  */
 int
@@ -777,131 +878,3 @@ writepng(MAZEBITMAP *mb, char *filename)
   return 0;
 } /* writepng() */
 
-
-int
-main()
-{
-  GRID *g;
-  CELL *c;
-  DMAP *dm;
-  MAZEBITMAP *mb;
-  int rc, errorgroup = 1, times;
-  char fname[80];
-  int usecolor;
-  int usedepth;
-
-for(times = 0; times < 11; times ++) {
-  switch (times) {
-     case 0: usecolor = COLOR_G;
-             usedepth = 1;
-	     snprintf(fname, 80, "tmp-gray-1.png");
-	     break;
-     case 1: usecolor = COLOR_G;
-             usedepth = 2;
-	     snprintf(fname, 80, "tmp-gray-2.png");
-	     break;
-     case 2: usecolor = COLOR_G;
-             usedepth = 4;
-	     snprintf(fname, 80, "tmp-gray-4.png");
-	     break;
-     case 3: usecolor = COLOR_G;
-             usedepth = 8;
-	     snprintf(fname, 80, "tmp-gray-8.png");
-	     break;
-     case 4: usecolor = COLOR_G;
-             usedepth = 16;
-	     snprintf(fname, 80, "tmp-gray-16.png");
-	     break;
-     case 5: usecolor = COLOR_GA;
-             usedepth = 8;
-	     snprintf(fname, 80, "tmp-grayalpha-8.png");
-	     break;
-     case 6: usecolor = COLOR_GA;
-             usedepth = 16;
-	     snprintf(fname, 80, "tmp-grayalpha-16.png");
-	     break;
-     case 7: usecolor = COLOR_RGB;
-             usedepth = 8;
-	     snprintf(fname, 80, "tmp-rgb-8.png");
-	     break;
-     case 8: usecolor = COLOR_RGB;
-             usedepth = 16;
-	     snprintf(fname, 80, "tmp-rgb-16.png");
-	     break;
-     case 9: usecolor = COLOR_RGBA;
-             usedepth = 8;
-	     snprintf(fname, 80, "tmp-rgbalpha-8.png");
-	     break;
-     case 10: usecolor = COLOR_RGBA;
-             usedepth = 16;
-	     snprintf(fname, 80, "tmp-rgbalpha-16.png");
-	     break;
-  }
-  
-  g = creategrid(16,16,1);
-  if(!g) {
-    printf("Create serpentine grid failed.\n");
-    return errorgroup;
-  }
-
-  iterategrid(g, serpentine, NULL);
-  namebyid(g, g->rows - 1, " A");
-  namebyid(g, g->max  - 1, " B");
-  dm = createdistancemap(g, visitid(g, g->rows - 1) );
-  if(!dm) {
-    printf("Create distancemap failed.\n");
-    return errorgroup;
-  }
-  /* non-lazy distance map */
-  distanceto(dm, visitid(g, g->max  - 1), 0);
-
-  rc = findpath(dm);
-  if( rc != 0 ) {
-    printf("Find path failed %d\n", rc);
-    return errorgroup;
-  }
-
-  mb = createmazebitmap(dm);
-  if(!mb) {
-    printf("Create mazebitmap failed.\n");
-    return errorgroup;
-  }
-
-  rc = initmazebitmap(mb, 15, 15, usecolor, usedepth, CELL_SIZE);
-  if( rc < 0 ) {
-    printf("init mazebitmap failed %d\n", rc);
-    return errorgroup;
-  } else if (rc == 0){
-    printf("init mazebitmap returned 0, good for only PNM\n");
-  } else if (rc == 1){
-    printf("init mazebitmap returned 1, suitable for all images\n");
-  } else {
-    printf("init mazebitmap returned %d\n", rc);
-  }
-
-  rc = drawmaze(mb);
-  printf("drawmaze returned %d, ", rc);
-  if( rc == g->max ) {
-    printf("as expected\n");
-  } else {
-    printf("which is wrong\n");
-    return errorgroup;
-  }
-
-// need to finish writepnm() for cases other than 8-bit gray scale
-//  rc = writepnm(mb, "tmp.pgm");
-//  if(!rc) {
-//    printf("Wrote tmp.pgm\n");
-//  }
-  rc = writepng(mb, fname);
-  if(!rc) {
-    printf("Wrote %s\n",fname);
-  }
-
-  freemazebitmap(mb);
-  freedistancemap(dm);
-  freegrid(g);
-
-}
-  return 0;
-}
