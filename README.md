@@ -49,7 +49,6 @@ Code test:
 2. testdistance
    * code to test distance.c functions
    * ascii only output
-   * TODO: needs better test cases for longest path solving
 3. testmazeimg   
    * code to test maze to image functions
    * makes many color variation versions of serpentine maze

@@ -122,6 +122,62 @@ freegrid(GRID* g)
   free(g);
 } /* freegrid() */
 
+/* This calculation ends up being needed a lot. If rotations happened
+ * often, I'd make each case statement calculation into a macro.
+ */
+static
+int
+id_rotate( int rotation, int id, int rows, int cols )
+{
+  int i, j, ncols, ni, nj, nid;
+
+  i = id / cols;
+  j = id % cols;
+
+  switch( rotation ) {
+    case ROTATE_CW:
+			ni = j;
+			nj = rows - 1 - i;
+			ncols = rows;
+			break;
+
+    case ROTATE_CCW:
+			ni = cols - 1 - j;
+			nj = i;
+			ncols = rows;
+			break;
+
+    case FLIP_TRANSPOSE:
+			ni = j;
+			nj = i;
+			ncols = rows;
+			break;
+
+    case ROTATE_180:
+			ni = rows - 1 - i;
+			nj = cols - 1 - j;
+			ncols = cols;
+			break;
+
+    case FLIP_LEFTRIGHT:
+			ni = i;
+			nj = cols - 1 - j;
+			ncols = cols;
+			break;
+
+    case FLIP_TOPBOTTOM:
+			ni = rows - 1 - i;
+			nj = j;
+			ncols = cols;
+			break;
+
+  } /* switch */
+   
+  nid = ni * ncols + nj;
+
+  return nid;
+} /* id_rotate() */
+
 
 /* rotate a grid (CW, CCW, 180), flip a grid (TB or LR), or transpose
  * rows and columns
@@ -168,47 +224,81 @@ rotategrid(GRID *g, int rotation)
 
   for(oc = 0; oc < g->max; oc ++) {
     int oi, oj, ni, nj;
+    int dirmap[DIRECTIONS];
 
-    oi = oc / ( g->cols );
-    oj = oc % ( g->cols );
+    dirmap[UP]   = UP;
+    dirmap[DOWN] = DOWN;
+    CELL *src = &(g->cells[oc]);
 
     switch( rotation ) {
       case ROTATE_CW:
-      				ni = oj;
-				nj = g->rows - 1 - oi;
+      				nc = id_rotate(rotation, oc, g->rows, g->cols);
+				dirmap[NORTH] = EAST;
+				dirmap[SOUTH] = WEST;
+				dirmap[WEST]  = NORTH;
+				dirmap[EAST]  = SOUTH;
 				break ;
 
       case ROTATE_CCW:
-      				ni = g->cols - 1 - oj;
-				nj = oi;
+      				nc = id_rotate(rotation, oc, g->rows, g->cols);
+				dirmap[NORTH] = WEST;
+				dirmap[SOUTH] = EAST;
+				dirmap[WEST]  = SOUTH;
+				dirmap[EAST]  = NORTH;
 				break ;
 
       case FLIP_TRANSPOSE:
-      				ni = oj;
-				nj = oi;
+      				nc = id_rotate(rotation, oc, g->rows, g->cols);
+				dirmap[NORTH] = WEST;
+				dirmap[SOUTH] = EAST;
+				dirmap[WEST]  = NORTH;
+				dirmap[EAST]  = SOUTH;
 				break ;
 
       case ROTATE_180:
-      				ni = g->rows - 1 - oi;
-				nj = g->cols - 1 - oj;
+      				nc = id_rotate(rotation, oc, g->rows, g->cols);
+				dirmap[NORTH] = SOUTH;
+				dirmap[SOUTH] = NORTH;
+				dirmap[WEST]  = EAST;
+				dirmap[EAST]  = WEST;
 				break ;
 
       case FLIP_LEFTRIGHT:
-      				ni = oi;
-				nj = g->cols - 1 - oj;
+      				nc = id_rotate(rotation, oc, g->rows, g->cols);
+				dirmap[NORTH] = NORTH;
+				dirmap[SOUTH] = SOUTH;
+				dirmap[WEST]  = EAST;
+				dirmap[EAST]  = WEST;
 				break ;
 
       case FLIP_TOPBOTTOM:
-      				ni = g->rows - 1 - oi;
-				nj = oj;
+      				nc = id_rotate(rotation, oc, g->rows, g->cols);
+				dirmap[NORTH] = SOUTH;
+				dirmap[SOUTH] = NORTH;
+				dirmap[WEST]  = WEST;
+				dirmap[EAST]  = EAST;
 				break ;
     } /* action switch(rotation) */
     
-    nc = ni * ncols + nj;
     CELL *dst = &(block[nc]);
-    CELL *src = &(g->cells[oc]);
-    memcpy((void *)dst, (void *)src, sizeof(CELL));
-  }
+    ni = nc / ncols;
+    nj = nc % ncols;
+    dst->id    = nc;
+    dst->row   = ni;
+    dst->col   = nj;
+    dst->ctype = src->ctype;
+    dst->name  = src->name;
+    dst->data  = src->data;
+
+    for(int go = FIRSTDIR; go < DIRECTIONS; go ++) {
+      if(src->dir[go] == NC) { 
+	dst->dir[dirmap[go]] = NC;
+      } else {
+	dst->dir[dirmap[go]] = id_rotate(rotation, src->dir[go],
+      					g->rows, g->cols);
+      }
+    } /* loop over all directions */
+  } /* loop over all cells */
 
   g->rows = nrows;
   g->cols = ncols;

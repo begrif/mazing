@@ -304,8 +304,38 @@ main(int notused, char**ignored)
     printf("findlongestpath masked grid didn't work\n");
   }
   printf("findlongestpath masked grid worked\n");
+  freedistancemap(dm);
+  freegrid(g);
 
+  errorgroup ++;
 
+  g = creategrid(7,3, VISITED);
+  if(!g) { 
+    printf("7x3 grid failed %d\n", rc);
+    return errorgroup;
+  }
+  printf("7x3 grid for rotated path test\n");
+  iterategrid(g, serpentine, NULL);
+  board = ascii_grid(g, 1);
+  puts(board);
+  free(board);
+
+  for (int rot = 0; rot < 360; rot += 90 ) {
+    dm = findlongestpath(g, VISITED);
+    if(!dm) {
+      printf("findlongestpath rotated grid failed %d degrees\n", rot);
+      board = ascii_grid(g, 1);
+      puts(board);
+      free(board);
+      return errorgroup;
+    }
+    printf("Farthest on rotation %d is %d\n", rot, dm->farthest);
+    if( rotategrid(g, CLOCKWISE) ) {
+      printf("rotate 7x3 failed (round %d)\n", rot);
+    }
+  }
+  freedistancemap(dm);
+  freegrid(g);
 
   return 0;
 }

@@ -132,6 +132,11 @@ rotationtestgrid()
   g = creategrid(2,5,1);
   if(!g) { return(GRID*)NULL; }
   iterategrid(g, counter, &total);
+  connectbyid(g, 0, EAST, 1, WEST);
+  connectbyid(g, 0, SOUTH, 5, NORTH);
+
+  connectbyid(g, 8, EAST, 9, WEST);
+  connectbyid(g, 4, SOUTH, 9, NORTH);
   return g;
 }
 
@@ -145,6 +150,23 @@ checkcell(GRID *g, int id, int t)
     printf("Expected new id %d to be old id %d, but it's %d\n",
     	id, t, c->ctype);
     return NC;
+  }
+  if((c->ctype == 0) || (c->ctype == 9)) {
+    printf("Checking cell id %d: new position %d,%d", c->id, c->row, c->col);
+    for(int go = FIRSTDIR; go < FOURDIRECTIONS; go++) {
+      printf("\n\tdir %s -> cellid(%d)", dirtoname(go), c->dir[go]);
+      if(NC != c->dir[go]) {
+        /* only succeeds on a SYMMETRICAL connection */
+        CELL *destination = visitdir(g, c, go, SYMMETRICAL);
+        if(destination) {
+	  printf(" SYMMETRICAL link");
+	} else {
+	  printf(" broken symmetry\n");
+	  return NC;
+	}
+      }
+    }
+    printf("\n\n");
   }
   return 0;
 }
@@ -510,6 +532,13 @@ main(int ignored, char**notused)
   if( checkcell(g, 0, 0) || checkcell(g, 4, 2) || checkcell(g, 5, 7)) {
     printf("Incorrect.\n");  return(errorblock); 
   }
+//  for(int n = 0; n < 10; n ++) {
+//    c1 = visitid(g, n);
+//    printf("Old cell%s now %d: \n", c1->name, c1->id);
+//    for(int g = 0; g < 4; g++) {
+//      printf("dir[%d %s] = new cell %d\n", g, dirtoname(g), c1->dir[g]);
+//    }
+//  }
   freegrid(g);
 
 

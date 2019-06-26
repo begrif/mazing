@@ -200,7 +200,7 @@ findpath(DMAP *dm)
   if(!dm) { return DISTANCE_ERROR; }
 
   /* this is the case when distanceto() wasn't run, or failed. */
-  if(dm->target_id < 0) {  return DISTANCE_ERROR; }
+  if(dm->target_id < 0) { return DISTANCE_ERROR; }
 
   walk = (TRAIL *)malloc( sizeof(TRAIL) );
   if(!walk) { return DISTANCE_ERROR; }
@@ -233,19 +233,19 @@ findpath(DMAP *dm)
 	}
 
     if(si) {
-      sid = (si - 1) * (dm->grid->cols) + sj;
+      sid = id - dm->grid->cols;
       TEST_SID;
     }
     if(sj) {
-      sid = si * (dm->grid->cols) + sj - 1;
+      sid = id - 1;
       TEST_SID;
     }
-    if(si < (dm->grid->cols - 1)) {
-      sid = (si + 1) * (dm->grid->cols) + sj;
+    if(si < (dm->grid->rows - 1)) {
+      sid = id + dm->grid->cols;
       TEST_SID;
     }
-    if(sj < (dm->grid->rows - 1)) {
-      sid = si * (dm->grid->cols) + sj + 1;
+    if(sj < (dm->grid->cols - 1)) {
+      sid = id + 1;
       TEST_SID;
     }
 
