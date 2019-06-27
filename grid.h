@@ -174,9 +174,10 @@ int namegrid(GRID *, char *);
  * that one function takes a pointer to the grid, a CELL, and
  * a pointer to a custom structure if it needs to store state.
  */
-int iteraterow(GRID *, int, int(*)(GRID *,CELL*,void *), void *);
-int iteratecol(GRID *, int, int(*)(GRID *,CELL*,void *), void *);
-int iterategrid(GRID *, int(*)(GRID *,CELL*,void *), void *);
+typedef int(*IFUNC_P)(GRID *,CELL*,void *);
+int iteraterow(GRID *, int, IFUNC_P, void *);
+int iteratecol(GRID *, int, IFUNC_P, void *);
+int iterategrid(GRID *, IFUNC_P, void *);
 
 /* find the opposite of a direction */
 int opposite( int /*dir*/);

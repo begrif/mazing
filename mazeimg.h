@@ -126,6 +126,10 @@ typedef struct mazebitmap_s {
 
 } MAZEBITMAP;
 
+/* for casting convience */
+typedef int (*CELLFUNC_P)(struct mazebitmap_s *, void *, CELL *);
+typedef void (*COLORFUNC_P)(struct mazebitmap_s *, CELL *, COLORDATA *);
+
 
 
 /* Creates MAZEBITMAP structure and has a cursory initialization from

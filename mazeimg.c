@@ -585,13 +585,9 @@ drawmaze(MAZEBITMAP *mb)
   if(!mb)    { return -1; }
 
   if(!mb->cellfunc) {
-    mb->cellfunc = /* type casting function pointers is verbose */
-    		   (int(*)(MAZEBITMAP *, void *, CELL *)) default_drawcell;
+    mb->cellfunc = (CELLFUNC_P) default_drawcell;
   }
-  rc = iterategrid( mb->dmap->grid, 
-		    /* type casting function pointers is verbose */
-  		    (int (*)(GRID *,CELL *,void *)) drawandplacecell,
-		    mb);
+  rc = iterategrid( mb->dmap->grid, (IFUNC_P) drawandplacecell, mb);
   return rc;
 } /* drawmaze */
 
