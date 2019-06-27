@@ -47,7 +47,7 @@ main(int notused, char**ignored)
   int rc;
 
   g = creategrid(10, 10, UNVISITED);
-  rc = wilson(g);
+  rc = wilson(g, NULL);
   if(rc) {
     printf("Um, issue.\n");
   }

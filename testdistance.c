@@ -37,6 +37,28 @@
  */
 
 int
+checkconnect(GRID *g, int id1, int id2, int dir)
+{
+  CELL *c1, *c2;
+  c1 = visitid(g, id1);
+  c2 = visitid(g, id2);
+  if(!c1) { printf("cell id %d is bad\n", id1); return 1; }
+  if(!c2) { printf("cell id %d is bad\n", id2); return 2; }
+
+  if(dir == NC) {
+    if( NC == isconnectedbycell(c1, c2, ANYDIR) ) {
+      printf("id %d correctly NOT connected id %d\n", id1, id2);
+      return 0;
+    }
+  } else if( dir == isconnectedbycell(c1, c2, dir ) ) {
+    printf("id %d connected %s to id %d\n", id1, dirtoname(dir), id2);
+    return 0;
+  }
+  printf("id %d to id %d connection test failed\n", id1, id2);
+  return 3;
+}
+
+int
 printpath(TRAIL *walk, int max)
 {
   int steps = 0;
@@ -114,7 +136,7 @@ main(int notused, char**ignored)
     printf("Create hollow grid failed.\n");
     return errorgroup;
   }
-  iterategrid(g, hollow, NULL);
+  iterategrid(g, (IFUNC_P) hollow, NULL);
   namebyid(g,  0, " A");
   namebyid(g, g->max - 1, " B");
 
@@ -335,6 +357,84 @@ main(int notused, char**ignored)
     }
   }
   freedistancemap(dm);
+  freegrid(g);
+
+  errorgroup ++;
+
+  printf("Testing hollow().\n");
+  g = creategrid(5,10,1);
+  if(!g) {
+    printf("Create hollow grid failed.\n");
+    return errorgroup;
+  }
+  HOLLOWCONFIG hmode = { .mode = HMODE_SAME_AS, .ctype = 2 };
+  iterategrid(g, (IFUNC_P) hollow, &hmode);
+  board = ascii_grid(g, 1);
+  puts(board);
+  free(board);
+
+  if(checkconnect(g, 1, 2, NC )) { return errorgroup; }
+  for(int i = 0; i < 17; i++) { c = visitid(g, i); c->ctype = 2; }
+  iterategrid(g, (IFUNC_P) hollow, &hmode);
+
+  board = ascii_grid(g, 1);
+  puts(board);
+  free(board);
+  if(checkconnect(g, 1, 2, EAST )) { return errorgroup; }
+  if(checkconnect(g, 10, 20, SOUTH )) { return errorgroup; }
+  if(checkconnect(g, 20, 21, NC )) { return errorgroup; }
+  freegrid(g);
+
+  g = creategrid(5,10,1);
+  if(!g) {
+    printf("Create hollow grid failed.\n");
+    return errorgroup;
+  }
+  for(int i = 0; i < 17; i++) { c = visitid(g, i); c->ctype = 2; }
+  /* still hmode.ctype = 2 ; */
+  hmode.mode = HMODE_SAME_AS_STRICT;
+  iterategrid(g, (IFUNC_P) hollow, &hmode);
+  board = ascii_grid(g, 1);
+  puts(board);
+  free(board);
+  if(checkconnect(g, 1, 2, EAST )) { return errorgroup; }
+  if(checkconnect(g, 10, 20, NC )) { return errorgroup; }
+  if(checkconnect(g, 20, 21, NC )) { return errorgroup; }
+  freegrid(g);
+
+  g = creategrid(5,10,1);
+  if(!g) {
+    printf("Create hollow grid failed.\n");
+    return errorgroup;
+  }
+  for(int i = 0; i < 17; i++) { c = visitid(g, i); c->ctype = 2; }
+  /* still hmode.ctype = 2 ; */
+  hmode.mode = HMODE_DIFFERENT_STRICT;
+  iterategrid(g, (IFUNC_P) hollow, &hmode);
+  board = ascii_grid(g, 1);
+  puts(board);
+  free(board);
+  if(checkconnect(g, 1, 2, NC )) { return errorgroup; }
+  if(checkconnect(g, 20, 30, SOUTH )) { return errorgroup; }
+  if(checkconnect(g, 30, 31, EAST )) { return errorgroup; }
+  freegrid(g);
+
+  g = creategrid(5,10,1);
+  if(!g) {
+    printf("Create hollow grid failed.\n");
+    return errorgroup;
+  }
+  for(int i = 0; i < 17; i++) { c = visitid(g, i); c->ctype = 2; }
+  /* still hmode.ctype = 2 ; */
+  hmode.mode = HMODE_DIFFERENT;
+  iterategrid(g, (IFUNC_P) hollow, &hmode);
+  board = ascii_grid(g, 1);
+  puts(board);
+  free(board);
+  if(checkconnect(g, 1, 2, NC )) { return errorgroup; }
+  if(checkconnect(g, 10, 20, SOUTH )) { return errorgroup; }
+  if(checkconnect(g, 20, 30, SOUTH )) { return errorgroup; }
+  if(checkconnect(g, 30, 31, EAST )) { return errorgroup; }
   freegrid(g);
 
   return 0;

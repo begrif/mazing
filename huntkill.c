@@ -45,7 +45,7 @@ main(int notused, char**ignored)
   int rc;
 
   g = creategrid(10, 10, UNVISITED);
-  rc = huntandkill(g);
+  rc = huntandkill(g, NULL);
   if(rc) {
     printf("Um, issue.\n");
   }

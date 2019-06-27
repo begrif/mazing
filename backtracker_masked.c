@@ -44,9 +44,11 @@ main(int notused, char**ignored)
 {
   GRID *g;
   DMAP *dm;
+  MASKSETTING ms;
   char *board;
   int rc, cellcount;
 
+  defaultmasksetting(&ms);
   g = creategrid(13, 13, UNVISITED);
   if(!g) { return 1; }
   cellcount = g->max;
@@ -67,9 +69,10 @@ main(int notused, char**ignored)
       namebycell(c, ":::");
       cellcount --;
     }
-  }
+  } /* masking */
 
-  rc = backtracker(g, cellcount);
+  ms.to_visit = cellcount;
+  rc = backtracker(g, &ms);
   if(rc) {
     printf("Um, issue.\n");
   }

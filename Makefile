@@ -1,9 +1,9 @@
 
-CFLAGS = -g
+CFLAGS = -g -std=c99 -D_BSD_SOURCE
 LDLIBS = -lpng
 
 ALLMAZES = binary_tree sidewinder aldousbroder wilson huntkill backtracker \
-	backtracker_masked
+	aldousbroder_masked wilson_masked huntkill_masked backtracker_masked
 
 TESTPROGRAMS = testgrid testdistance testmazeimg testmazeimgstdout
 
@@ -38,8 +38,11 @@ testmazeimgstdout: testmazeimgstdout.o mazeimg.o distance.o grid.o mazes.o
 binary_tree: binary_tree.o grid.o mazes.o
 sidewinder: sidewinder.o grid.o mazes.o
 aldousbroder: aldousbroder.o distance.o grid.o mazes.o
+aldousbroder_masked: aldousbroder_masked.o distance.o grid.o mazes.o
 wilson: wilson.o distance.o grid.o mazes.o
+wilson_masked: wilson_masked.o distance.o grid.o mazes.o
 huntkill: huntkill.o distance.o grid.o mazes.o
+huntkill_masked: huntkill_masked.o distance.o grid.o mazes.o
 backtracker: backtracker.o distance.o grid.o mazes.o
 backtracker_masked: backtracker_masked.o distance.o grid.o mazes.o
 
@@ -55,8 +58,11 @@ testmazeimgstdout.o: mazeimg.h mazes.h distance.h grid.h
 binary_tree.o: grid.h mazes.h
 sidewinder.o: grid.h mazes.h
 aldousbroder.o: grid.h mazes.h distance.h
+aldousbroder_masked.o: grid.h mazes.h distance.h
 wilson.o: grid.h mazes.h distance.h
+wilson_masked.o: grid.h mazes.h distance.h
 huntkill.o: grid.h mazes.h distance.h
+huntkill_masked.o: grid.h mazes.h distance.h
 backtracker.o: grid.h mazes.h distance.h
 backtracker_masked.o: grid.h mazes.h distance.h
 

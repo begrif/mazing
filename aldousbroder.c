@@ -49,7 +49,7 @@ main(int notused, char**ignored)
   int rc;
 
   g = creategrid(10,10,UNVISITED);
-  rc = aldbro(g);
+  rc = aldbro(g, NULL);
   if(rc) {
     printf("Um, issue.\n");
   }
