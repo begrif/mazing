@@ -142,6 +142,7 @@ id_rotate( int rotation, int id, int rows, int cols )
 			break;
 
     case ROTATE_CCW:
+    case ROTATE_CCW_ALT:
 			ni = cols - 1 - j;
 			nj = i;
 			ncols = rows;
@@ -182,7 +183,7 @@ id_rotate( int rotation, int id, int rows, int cols )
 /* rotate a grid (CW, CCW, 180), flip a grid (TB or LR), or transpose
  * rows and columns
  *	ROTATE_CW	aka CLOCKWISE
- *	ROTATE_CCW	aka COUNTERCLOCKWISE
+ *	ROTATE_CCW	aka COUNTERCLOCKWISE	aka ROTATE_CCW_ALT
  *	ROTATE_180
  *	FLIP_TOPBOTTOM
  *	FLIP_LEFTRIGHT
@@ -201,6 +202,7 @@ rotategrid(GRID *g, int rotation)
   switch( rotation ) {
     case ROTATE_CW:      /* fall through */
     case ROTATE_CCW:
+    case ROTATE_CCW_ALT:
     case FLIP_TRANSPOSE:
     		nrows = g->cols;
 		ncols = g->rows;
@@ -240,6 +242,7 @@ rotategrid(GRID *g, int rotation)
 				break ;
 
       case ROTATE_CCW:
+      case ROTATE_CCW_ALT:
       				nc = id_rotate(rotation, oc, g->rows, g->cols);
 				dirmap[NORTH] = WEST;
 				dirmap[SOUTH] = EAST;

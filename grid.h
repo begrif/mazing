@@ -33,6 +33,7 @@
 #define ROTATE_CW         90
 #define CLOCKWISE         ROTATE_CW
 #define ROTATE_CCW        -90
+#define ROTATE_CCW_ALT    270
 #define COUNTERCLOCKWISE  ROTATE_CCW
 #define ROTATE_180        180
 #define FLIP_LEFTRIGHT    12
