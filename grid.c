@@ -9,8 +9,9 @@
 
 
 /* initializes a cell to have no connections
- * of type t
- * with id id
+ * be of type t
+ * be at row i, col j
+ * and have id id
  */
 void
 initcell(CELL *c, int t, int i, int j, int id)
@@ -433,7 +434,7 @@ visitrandom(GRID *g)
  *
  * connect{BAR} create a connection
  * isconnected{BAR} test a connection
- * delconnect{BAR} remove a connection
+ * disconnect{BAR} remove a connection
  * natdirection{BAR} returns the expected direction from C1 to C2
  */
 
@@ -478,6 +479,53 @@ void connectbyid(GRID *g, int id1, int c1c2d,
   connectbycell(visitid(g, id1), c1c2d,
                 visitid(g, id2), c2c1d);
 } /* connectbyid() */
+
+
+/* connection removal */
+/* c2 to c1 direction (c1c2d) need not be opposite of
+ * c1 to c2 (c2c1d), and either can be NC: no connection.
+ *    during disconnect, NC means don't try to remove a connection
+ * use SYMMETRICAL for c2c1d to automatically use opposite dir
+ */
+void 
+disconnectbycell(CELL *c1, int c1c2d, CELL * c2, int c2c1d)
+{
+  if(!c1) { return; }
+  if(!c2) { return; }
+
+  if(c2c1d == SYMMETRICAL) { c2c1d = opposite(c1c2d); }
+
+  if(c1c2d > DIRECTIONS) { return; }
+  if(c2c1d > DIRECTIONS) { return; }
+  if(c1c2d < NC) { return; }
+  if(c2c1d < NC) { return; }
+
+  if(c1c2d > NC) {
+    c1->dir[c1c2d] = NC;
+  }
+  if(c2c1d > NC) {
+    c2->dir[c2c1d] = NC;
+  }
+} /* disconnectbycell() */
+
+void
+disconnectbyrc(GRID *g, int r1, int c1, int c1c2d,
+                        int r2, int c2, int c2c1d)
+{
+  if(!g) { return; }
+  disconnectbycell(visitrc(g, r1, c1), c1c2d,
+                   visitrc(g, r2, c2), c2c1d);
+} /* disconnectbyrc() */
+
+void
+disconnectbyid(GRID *g, int id1, int c1c2d,
+                        int id2, int c2c1d)
+{
+  if(!g) { return; }
+  disconnectbycell(visitid(g, id1), c1c2d,
+                   visitid(g, id2), c2c1d);
+} /* disconnectbyid() */
+
 
 
 /* check connections */

@@ -295,6 +295,17 @@ main(int ignored, char**notused)
     }
   }
 
+  printf("Deleting that connection\n");
+
+  disconnectbycell(c1, d, c2, SYMMETRICAL);
+  d = isconnectedbycell(c1, c2, ANY);
+  if(d != NC) {
+    printf("That failed, still connected by %s.\n", dirtoname(d));
+    return(errorblock);
+  } else {
+    printf("That worked\n");
+  }
+
   errorblock ++;
 
   c1 = visitrandom(g);

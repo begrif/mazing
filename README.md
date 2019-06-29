@@ -78,7 +78,6 @@ General code
 1. `grid.c` and `grid.h`
    * implements a grid with a notion of walls between cells
    * provides an ASCII art grid printer
-   * TODO: building walls (deleting connections)
 2. `distance.c` and `distance.h`
    * as an adjuct to `grid.c`, this measures distances
    * finds one shortest path (just one, even if multiple are possible)

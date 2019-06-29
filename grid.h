@@ -123,7 +123,7 @@ CELL *visitrandom(GRID *);
  *
  * connect makes connections
  * isconnected tests connections
- * delconnect removes connections	(TODO)
+ * disconnect removes connections
  * edgestatus returns information about edges
  * wallstatus returns information about walls
  * natdirection returns a direction between cells (but not for any pair)
@@ -137,6 +137,17 @@ void connectbyrc(GRID *,
              	int /*r2*/, int /*c2*/, int /* cell2 -> cell1 direction */);
 
 void connectbyid(GRID *,
+		int /*id1*/, int /* cell1 -> cell2 direction */,
+             	int /*id2*/, int /* cell2 -> cell1 direction */);
+
+void disconnectbycell(CELL *, int /* cell1 -> cell2 direction */,
+             CELL *, int /* cell2 -> cell1 direction */);
+
+void disconnectbyrc(GRID *,
+		int /*r1*/, int /*c1*/, int /* cell1 -> cell2 direction */,
+             	int /*r2*/, int /*c2*/, int /* cell2 -> cell1 direction */);
+
+void disconnectbyid(GRID *,
 		int /*id1*/, int /* cell1 -> cell2 direction */,
              	int /*id2*/, int /* cell2 -> cell1 direction */);
 
