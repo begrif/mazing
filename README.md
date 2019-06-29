@@ -43,6 +43,14 @@ Maze demos:
 **Note**: The nature of the `sidewinder` and `binarytree` mazes means they
 would break with some masks, so no masking implementation is provided.
 
+Playable games:
+
+1. `btadventure`
+   * A "binary tree" (or "buried treasure") text adventure
+   * wander a maze collecting prizes and live to escape
+   * ascii only output
+   * simple *type a direction* input
+
 Code test:
 
 1. testgrid
