@@ -171,6 +171,27 @@ checkcell(GRID *g, int id, int t)
   return 0;
 }
 
+GRID *
+mksmallgrid(int rot)
+{ 
+  GRID *g;
+  char *board;
+  insum total = { 0 };
+
+  g = creategrid(2,2,rot);
+  if(!g) { return(GRID*)NULL; }
+  iterategrid(g, counter, &total);
+  connectbyid(g, 0, EAST, 1, WEST);
+  connectbyid(g, 0, SOUTH, 2, NORTH);
+  if(rotategrid(g, rot)) {
+    freegrid(g);
+    return NULL;
+  }
+  board = ascii_grid(g, 1);
+  g->data = board;
+  return g;
+}
+
 int
 main(int ignored, char**notused)
 {
@@ -543,15 +564,105 @@ main(int ignored, char**notused)
   if( checkcell(g, 0, 0) || checkcell(g, 4, 2) || checkcell(g, 5, 7)) {
     printf("Incorrect.\n");  return(errorblock); 
   }
-//  for(int n = 0; n < 10; n ++) {
-//    c1 = visitid(g, n);
-//    printf("Old cell%s now %d: \n", c1->name, c1->id);
-//    for(int g = 0; g < 4; g++) {
-//      printf("dir[%d %s] = new cell %d\n", g, dirtoname(g), c1->dir[g]);
-//    }
-//  }
   freegrid(g);
 
+  errorblock++;
+
+  GRID *little = mksmallgrid(0);
+  g = creategrid(5,5,0);
+  if(!little) { printf("copy/paste little init failed\n"); return errorblock; }
+  if(!g)      { printf("copy/paste grid  init failed\n"); return errorblock; }
+  rc = pasteintogrid(little, g, 0, 0, 1);
+  if(rc) {
+    printf("pasteintogrid (first time) failed: %d\n", rc);
+    return(errorblock); 
+  }
+
+  GRID *other = copygrid(little, 1);
+  if(!other) { printf("copy grid other failed\n"); return errorblock; }
+  board = ascii_grid(other, 1);
+
+  if(0 == strncmp(board, other->data, BUFSIZ)) {
+    printf("Copied grid ASCII art as expected\n");
+  } else {
+    printf("Copied grid ASCII art wrong\n");
+    return(errorblock);
+  }
+  puts(board);
+  free(board);
+
+  little->data = NULL;
+  freegrid(little);
+
+  rc = rotategrid(other, 90);
+  if(rc) {
+    printf("Rotate other grid failed: %d\n",rc);
+    return(errorblock);
+  }
+
+  little = mksmallgrid(180);
+  if(!little) { printf("copy/paste little init failed\n"); return errorblock; }
+
+  rc = pasteintogrid(little, g, 3, 3, 1);
+  if(rc) {
+    printf("pasteintogrid (2nd time) failed: %d\n", rc);
+    return(errorblock); 
+  }
+
+  rc = pasteintogrid(other, g, 0, 3, 1);
+  if(rc) {
+    printf("pasteintogrid (3rd time) failed: %d\n", rc);
+    return(errorblock); 
+  }
+
+  rc = rotategrid(little, 90);
+  if(rc) {
+    printf("Rotate little grid failed: %d\n", rc);
+    return(errorblock);
+  }
+  rc = pasteintogrid(little, g, 3, 0, 1);
+  if(rc) {
+    printf("pasteintogrid (4th time) failed: %d\n", rc);
+    return(errorblock); 
+  }
+
+  freegrid(other);
+  freegrid(little);
+
+  printf("Cell ids 6, 8, 16, and 18 should all be type 3\n");
+  printboard(g,1);
+  c1 = visitid(g,  6);
+  c2 = visitid(g,  8);
+  c3 = visitid(g, 16);
+  c4 = visitid(g, 18);
+  printf("c1: %d \t c2: %d \t c3: %d \t c4: %d\n",
+  	c1->ctype, c2->ctype, c3->ctype, c4->ctype);
+  if(3 != c1->ctype) { printf("Whoops!\n"); return(errorblock); }
+  if(3 != c2->ctype) { printf("Whoops!\n"); return(errorblock); }
+  if(3 != c3->ctype) { printf("Whoops!\n"); return(errorblock); }
+  if(3 != c4->ctype) { printf("Whoops!\n"); return(errorblock); }
+  printf("Checks out.\n");
+
+
+  little = mksmallgrid(FLIP_TRANSPOSE);
+  if(!little) { printf("copy/paste little init failed\n"); return errorblock; }
+
+  rc = pasteintogrid(g, little, 1, 1, 1);
+  if(rc == 0) {
+    printf("Expected failure of big into little paste failed\n");
+    return errorblock;
+  }
+  printf("Big into little paste failed (correctly)\n");
+ 
+  rc = pasteintogrid(little, g, 5, 5, 1);
+  if(rc == 0) {
+    printf("Expected paste beyond grid border failed\n");
+    return errorblock;
+  }
+  printf("Paste beyond grid border failed (correctly)\n");
+ 
+  freegrid(little);
+  freegrid(g);
 
   return(0);
 }

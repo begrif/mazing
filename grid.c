@@ -23,6 +23,8 @@ initcell(CELL *c, int t, int i, int j, int id)
   c->row = i;
   c->col = j;
   c->ctype = t;
+  c->name = NULL;
+  c->data = NULL;
 
   for(int d = 0; d < DIRECTIONS; d++) {
     c->dir[d] = NC;
@@ -40,6 +42,56 @@ freecell(CELL *c)
   if(c->name) { free(c->name); }
   if(c->data) { free(c->data); }
 } /* freecell() */
+
+
+/* Copy a cell: id, position, type, name, direction data, and optionally
+ * the pointer to the user data (it's opaque, so we can't actually copy
+ * the contents). Returns 0 on success, negative on failure.
+ * The CELLCOPYCONFIG is used to remap cell IDs and row/col data if
+ * needed. For copygrid() not needed, for pasteintogrid() almost
+ * certainly is needed.
+ */
+int
+copycell(CELL *orig, CELL *dupe, CELLCOPYCONFIG *conf)
+{
+  int r,c,newid;
+
+#define CALCNEWID(i) { if((conf->origwidth == conf->newwidth) && \
+                          (conf->rowoffset == 0) && \
+                          (conf->coloffset == 0)) { \
+			 newid = (i); \
+		       } else { \
+			 r = ((i) / conf->origwidth) + conf->rowoffset; \
+			 c = ((i) % conf->origwidth) + conf->coloffset; \
+			 newid = (r * conf->newwidth) + c; \
+		       } \
+		     }  
+
+  CALCNEWID(orig->id);
+  dupe->id = newid;
+  dupe->row = conf->rowoffset + orig->row;
+  dupe->col = conf->coloffset + orig->col;
+  dupe->ctype = orig->ctype;
+
+  for(int d = 0; d < DIRECTIONS; d++) {
+    CALCNEWID(orig->dir[d]);
+    dupe->dir[d] = newid;
+  }
+
+  if(orig->name) {
+    /* namebycell can return 0 or 1 for two different success states */
+    if(0 < namebycell(dupe, orig->name)) {
+      return -1;
+    }
+  }
+
+  if(conf->includeuserdata) {
+    dupe->data = orig->data;
+  }
+
+  return 0;
+} /* copycell() */
+
 
 /* creates a block of cells, used in creategrid() and grid modifiers */
 static
@@ -88,6 +140,8 @@ creategrid(int i, int j, int t)
   g->cols = j;
   g->planes = 1;	/* up/down later */
   g->gtype = t;
+  g->data = NULL;
+  g->name = NULL;
   g->max = count;
   g->cells = createcells(g->rows, g->cols, t, 1);
   if(!g->cells) {
@@ -122,6 +176,107 @@ freegrid(GRID* g)
 
   free(g);
 } /* freegrid() */
+
+
+/* Perform a deep copy of an entire grid. If includeuserdata is set
+ * the pointers for the user data will be copied (since userdata is
+ * opaque, we can't copy the actual contents).
+ */
+GRID *
+copygrid(GRID *g, int includeuserdata)
+{
+  GRID *dupe;
+  int id;
+  CELL *oc, *dc;
+  CELLCOPYCONFIG conf;
+
+  if(!g) { return NULL; }
+
+  dupe = creategrid(g->rows, g->cols, g->gtype);
+  if(!dupe) { return NULL; }
+
+  if(g->name) {
+    /* namegrid() can return 1 and be successful, but only when free()ing
+     * an existing name; our dupe won't have one of those.
+     */
+    if(0 != namegrid(dupe, g->name)) {
+      freegrid(dupe);
+      return NULL;
+    }
+  }
+
+  if(includeuserdata) {
+    dupe->data = g->data;
+  }
+
+  conf.includeuserdata = includeuserdata;
+  conf.origwidth       = g->cols;
+  conf.newwidth        = g->cols;
+  conf.rowoffset       = 0;
+  conf.coloffset       = 0;
+
+  for (id = 0; id < g->max; id++) {
+    oc = &(g->cells[id]);
+    dc = &(dupe->cells[id]);
+
+    if(0 != copycell(oc, dc, &conf)) {
+      freegrid(dupe);
+      return NULL;
+    }
+  }
+
+  return dupe;
+} /* copygrid() */
+
+
+/* Paste source grid sg into destination grid dg offset top rows south
+ * and left rows east, optionally copying the pointers to the userdata.
+ * The source grid is not modified in anyway. Connections around the
+ * edges of the paste area are not modified, so if they had existed,
+ * they are probably going to be one way connections afterwards.
+ *
+ * Returns 0 on success and a negative value on failure.
+ */
+int
+pasteintogrid(GRID *sg, GRID *dg, int top, int left, int includeuserdata)
+{
+  int i, j, id, rc;
+  CELL *sc, *dc;
+  CELLCOPYCONFIG conf;
+
+  /* flat out bad parameters */
+  if(!dg)      { return -1; }
+  if(!sg)      { return -1; }
+  if(top  < 0) { return -1; }
+  if(left < 0) { return -1; }
+
+  /* more subtly bad options */
+  if(sg->cols + left > dg->cols) { return -2; }
+  if(sg->rows + top  > dg->rows) { return -2; }
+
+  conf.includeuserdata = includeuserdata;
+  conf.origwidth       = sg->cols;
+  conf.newwidth        = dg->cols;
+  conf.rowoffset       = top;
+  conf.coloffset       = left;
+  
+  /* rc : return code
+   * sc : source cell
+   * dc : destination cell
+   */
+  rc = 0;
+  for (i = 0; i < sg->cols; i++) {
+    for (j = 0; j < sg->rows; j++) {
+      sc = visitrc(sg, i    , j     );
+      dc = visitrc(dg, i+top, j+left);
+      /* copycell returns 0 on success, and -1 on error */
+      rc += copycell(sc, dc, &conf);
+    }
+  } /* copy the cells */
+
+  return rc;
+} /* pasteintogrid() */
+
 
 /* This calculation ends up being needed a lot. If rotations happened
  * often, I'd make each case statement calculation into a macro.
@@ -201,6 +356,10 @@ rotategrid(GRID *g, int rotation)
   if(!g) { return NC; }
 
   switch( rotation ) {
+   case 0:              /* no-op */
+		return 0;
+		break;
+
     case ROTATE_CW:      /* fall through */
     case ROTATE_CCW:
     case ROTATE_CCW_ALT:
@@ -707,6 +866,7 @@ wallstatusbyid(GRID *g, int id)
   return wallstatusbycell(visitid(g,id));
 } /* wallstatusbyid() */
 
+
 /* 
  * natdirection{BAR} returns the expected direction from C1 to C2
  *			one of NORTH, SOUTH, EAST, WEST if adjacent
@@ -747,6 +907,8 @@ natdirectionbyid(GRID *g, int id1, int id2)
 
   return natdirectionbycell(visitid(g,id1), visitid(g,id2));
 } /* natdirectionbyid() */
+
+
 /* mallocs space and copies a name to a cell */
 /* returns -3 if no cell,
  * -2 if malloc failed after free()ing old name
@@ -773,17 +935,17 @@ namebyrc(GRID *g, int i, int j, char *name)
 {
   if(!g) { return -3; }
   return namebycell(visitrc(g,i,j), name);
-}
+} /* namebyrc() */
 
 int
 namebyid(GRID *g, int id, char *name)
 {
   if(!g) { return -3; }
   return namebycell(visitid(g,id), name);
-}
+} /* namebyid() */
 
 
-/* grid version of namebycell() */
+/* grid equivilent of namebycell() */
 int
 namegrid(GRID *g, char*name)
 {
@@ -814,7 +976,7 @@ iterategrid(GRID *g, int (*ifunc)(GRID *,CELL *,void *), void *param)
     }
   }
   return rc;
-}
+} /* iterategrid() */
 
 /* for every cell in row i of grid, run provided function and
  * return sum of results
@@ -850,7 +1012,8 @@ iteratecol(GRID *g, int j, int (*ifunc)(GRID *,CELL *,void *), void *param)
 
 /* return the opposite of a direction */
 int
-opposite(int d) {
+opposite(int d)
+{
   switch(d) {
     case NORTH: return SOUTH;
     case SOUTH: return NORTH;
@@ -860,7 +1023,7 @@ opposite(int d) {
     case DOWN: return UP;
     default: return NC;
   }
-}
+} /* opposite() */
 
 /* turn a direction into a string (eg for debugging) */
 const char *

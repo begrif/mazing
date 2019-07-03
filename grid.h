@@ -62,6 +62,10 @@
 #define NO_WALLS	0x200
 #define WALL_ERROR	EDGE_ERROR
 
+/* for ascii_grid() */
+#define PLAIN_ASCII     0
+#define USE_NAMES       1
+
 /* Max size of a name */
 #ifndef BUFSIZ
 #  define BUFSIZ 1024	/* typical value from stdio.h */
@@ -102,12 +106,24 @@ typedef struct
    CELL *cells;
 } GRID;
 
+typedef struct cellcopyconfig_s {
+  int origwidth;
+  int newwidth;
+  int rowoffset;
+  int coloffset;
+  int includeuserdata;
+} CELLCOPYCONFIG;
+
 void initcell(CELL*, int /*ctype*/, int /*i*/, int/*j*/, int /*id*/);
 void freecell(CELL*);
+int copycell(CELL *, CELL *, CELLCOPYCONFIG *);
 
 GRID *creategrid(int /*rows*/, int /*cols*/, int /*gtype*/);
 void freegrid(GRID *);
 int rotategrid(GRID *, int /*rotation flag*/);
+GRID *copygrid(GRID *, int /* includeuserdata */);
+int pasteintogrid(GRID * /* src */, GRID * /* dest */,
+	int /* top */, int /* left */, int /* includeuserdata */);
 
 /* visit functions return a CELL pointer */
 /* visitid() is the fastest of the lot */
@@ -137,6 +153,17 @@ void connectbyrc(GRID *,
              	int /*r2*/, int /*c2*/, int /* cell2 -> cell1 direction */);
 
 void connectbyid(GRID *,
+		int /*id1*/, int /* cell1 -> cell2 direction */,
+             	int /*id2*/, int /* cell2 -> cell1 direction */);
+
+void disconnectbycell(CELL *, int /* cell1 -> cell2 direction */,
+             CELL *, int /* cell2 -> cell1 direction */);
+
+void disconnectbyrc(GRID *,
+		int /*r1*/, int /*c1*/, int /* cell1 -> cell2 direction */,
+             	int /*r2*/, int /*c2*/, int /* cell2 -> cell1 direction */);
+
+void disconnectbyid(GRID *,
 		int /*id1*/, int /* cell1 -> cell2 direction */,
              	int /*id2*/, int /* cell2 -> cell1 direction */);
 
