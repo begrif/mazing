@@ -305,7 +305,7 @@ findlongestpath(GRID *g, int t)
     return NULL;
   }
 
-  rc = distanceto(first, pb, 0);
+  rc = distanceto(first, pb, NONLAZYMAP);
   if(rc == DISTANCE_ERROR) {
     freedistancemap(first);
     return NULL;
@@ -334,7 +334,7 @@ findlongestpath(GRID *g, int t)
     return NULL;
   }
 
-  rc = distanceto(second, pa, 0);
+  rc = distanceto(second, pa, NONLAZYMAP);
   if(rc == DISTANCE_ERROR) {
     freedistancemap(second);
     return NULL;

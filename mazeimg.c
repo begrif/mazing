@@ -233,6 +233,11 @@ default_colorpicker(MAZEBITMAP *mb, CELL *c, COLORDATA *cd)
 {
   int i, percent, adjust;
 
+  if(mb) {
+    cd->channels = mb->channels;
+    cd->depth    = mb->colordepth;
+  }
+
   /* We're lazy and always put in the alpha, so test gray or not gray */
   if ( cd->channels < 3 ) {
     cd->wall[0] = GRAY_WALL_LINE;

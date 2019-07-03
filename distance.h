@@ -1,6 +1,8 @@
 #ifndef _DISTANCE_H
 #define _DISTANCE_H
 
+#define LAZYMAP            1
+#define NONLAZYMAP         0
 #define DISTANCE_NOPATH   -1
 #define DISTANCE_ERROR    -2
 
