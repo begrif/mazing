@@ -331,45 +331,45 @@ Data types
 
 ### Defined in `grid.h`:
 * `CELL`
-   Treat as read-only:
-   * `int id;`
-      cell unique identifier (and index into grid array)
-   * `int row,col;`
-      the notional location of the cell
-   * `int dir[DIRECTIONS];`
-      links to other cells in each of the DIRECTIONS
-   Read-write:
-   * `int ctype;`
-     Initialized to be the same as grid type, and used by some maze
-     generators. VISITED, UNVISITED, and MASKED are values generators
-     may care about, where *visited* status refers to the state of
-     the generator, not the user. Post maze generation, is not used
-     by other mazing functions.
-   * `char *name;`
-     There is a helper function to set this, and optionally printed by the
-     ASCII art maze printer.
-   * `void *data;`
-     This is purely for user use.
+   * Treat as read-only:
+     * `int id;`
+	cell unique identifier (and index into grid array)
+     * `int row,col;`
+	the notional location of the cell
+     * `int dir[DIRECTIONS];`
+	links to other cells in each of the DIRECTIONS
+   * Read-write:
+     * `int ctype;`
+       Initialized to be the same as grid type, and used by some maze
+       generators. VISITED, UNVISITED, and MASKED are values generators
+       may care about, where *visited* status refers to the state of
+       the generator, not the user. Post maze generation, is not used
+       by other mazing functions.
+     * `char *name;`
+       There is a helper function to set this, and optionally printed by the
+       ASCII art maze printer.
+     * `void *data;`
+       This is purely for user use.
 
 * `GRID`
-   Treat as read-only:
-   * `int rows, cols;`
-     Dimensions of the maze grid.
-   * `int planes;`
-     For future use.
-   * `int max;`
-     Size of a single plane (rows x cols)
-   * `CELL *cells;`
-     Array of cells, indexed by id.
-   Read-write:
-   * `int gtype;`
-     Initialized during grid creation, but never subsequently used. May
-     be read by future grid-to-image functions. (Think non-rectangular.)
-   * `char *name;`
-     Can be set with a helper function, and optionally printed by the
-     ASCII art maze printer.
-   * `void *data;`
-     This is purely for user use.
+   * Treat as read-only:
+     * `int rows, cols;`
+        Dimensions of the maze grid.
+     * `int planes;`
+        For future use.
+     * `int max;`
+        Size of a single plane (rows x cols)
+     * `CELL *cells;`
+        Array of cells, indexed by id.
+   * Read-write:
+     * `int gtype;`
+        Initialized during grid creation, but never subsequently used. May
+        be read by future grid-to-image functions. (Think non-rectangular.)
+     * `char *name;`
+        Can be set with a helper function, and optionally printed by the
+        ASCII art maze printer.
+     * `void *data;`
+        This is purely for user use.
 
 * `CELLCOPYCONFIG`
   This is a configuration structure entirely for user specified values.
@@ -397,30 +397,30 @@ Data types
   A distance map, used to show the distance between one point and many
   other points, possibly even the full maze. This is entirely read-only.
   * `GRID *grid;`
-    A pointer to the GRID this map is for.
+     A pointer to the GRID this map is for.
   * `int root_id;`
-    The zero point: where all distances are measured from.
+     The zero point: where all distances are measured from.
   * `int rrow, rcol;`
-    Co-ordinates of the zero point.
+     Co-ordinates of the zero point.
   * `int target_id;`
-    The point of interest: will be negative if the distance hasn't been
-    successfully calculated.
+     The point of interest: will be negative if the distance hasn't been
+     successfully calculated.
   * `int farthest_id;`
-    (One of) the farthest point from the zero point. It's possible for
-    multiple points to be equidistant, but this will be one of those.
-    Only set with the NONLAZYMAP option.
+     (One of) the farthest point from the zero point. It's possible for
+     multiple points to be equidistant, but this will be one of those.
+     Only set with the NONLAZYMAP option.
   * `int farthest;`
-    How far away that farthest point is. Only set with the NONLAZYMAP
-    option.
+     How far away that farthest point is. Only set with the NONLAZYMAP
+     option.
   * `int msize;`
-    Number of points to malloc for a map.
+     Number of points to malloc for a map.
   * `int *map;`
-    Distances, indexed by cell id.
+     Distances, indexed by cell id.
   * `int *frontier;`
-    Cell ids to check during the next round.
+     Cell ids to check during the next round.
   * `TRAIL *path;`
-    Linked list of a path from root to target. next/prev set to NULL 
-    at the ends.
+     Linked list of a path from root to target. next/prev set to NULL 
+     at the ends.
 
 
 ### Defined in `mazes.h`:
@@ -429,112 +429,112 @@ Data types
   UNVISITED, and MASKED, and also to provide a count of cells to
   be included in the maze, if different from total number of cells.
   Completely user settable, with a function to initialize to defaults.
-  * `int type_unvisited;
-  * `int type_visited;
-  * `int type_masked;
-  These are cell types for the different statuses. VISITED/UNVISITED
-  refer to the maze generator's status for a cell, and will be set
-  during generation. MASKED are cells to not use. Most generators
-  actually compare either VISITED/UNVISITED or MASKED but not both.
-  But it's usually critical that all three values differ.
+  * `int type_unvisited;`
+  * `int type_visited;`
+  * `int type_masked;`
+    These are cell types for the different statuses. VISITED/UNVISITED
+    refer to the maze generator's status for a cell, and will be set
+    during generation. MASKED are cells to not use. Most generators
+    actually compare either VISITED/UNVISITED or MASKED but not both.
+    But it's usually critical that all three values differ.
   * `int to_visit;`
-  Several of the generators rely on knowing a count of cells left to
-  include in the maze, if cells have been MASKED out this needs to
-  be less than the total number of cells.
+   Several of the generators rely on knowing a count of cells left to
+   include in the maze, if cells have been MASKED out this needs to
+   be less than the total number of cells.
 
 * `HOLLOWCONFIG`
-  The `hollow()` "maze" generator just "knocks down" all walls. It
-  has a limited amount of configurability. You can knock down the
-  walls only for cells of a certain type (or not a certain type)
-  and control if that knocking down includes neighbors not of that
-  specified type. Or you can knock down everything.
+   The `hollow()` "maze" generator just "knocks down" all walls. It
+   has a limited amount of configurability. You can knock down the
+   walls only for cells of a certain type (or not a certain type)
+   and control if that knocking down includes neighbors not of that
+   specified type. Or you can knock down everything.
   * `int mode;`
-    Use HMODE_ALL, HMODE_SAME_AS, HMODE_SAME_AS_STRICT, HMODE_DIFFERENT
-    or HMODE_DIFFERENT_STRICT. The strict versions check cell types at
-    both ends of the connection.
+     Use HMODE_ALL, HMODE_SAME_AS, HMODE_SAME_AS_STRICT, HMODE_DIFFERENT
+     or HMODE_DIFFERENT_STRICT. The strict versions check cell types at
+     both ends of the connection.
   * `int ctype;`
-    Used if not HMODE_ALL
+     Used if not HMODE_ALL
 
 
 ### Defined in `mazeimg.h`:
 * `MAZEBITMAP`
-  Treat as read-only:
-  * `int rows, cols;`
-    Copied from the GRID, set during initialization.
-  * `int cell_w, cell_h;`
-  * `int img_w, img_h;`
-    Set during initialization, one pair from parameters and the other
-    calculated based on the CELL_SIZE / MAZE_SIZE setting.
-  * `int colortype;`
-    Set during initialization: COLOR_G, COLOR_GA, COLOR_RGB or
-    COLOR_RGBA.
-  * `int colordepth;`
-    Set during initialization: 1, 2, 4, 8, or 16. This is bits per
-    color channel per pixel.
-  * `int channels;`
-    Set during initialization: 1, 2, 3, or 4. Each of red, green, blue,
-    gray, and alpha is a channel. 1 or 2 is a grayscale image, without
-    or with a alpha. 3 or 4 is RGB without or with alpha.
-  * `int doubled;`
-    Set during initialization if colordepth is 16.
-  * `int rowsize;`
-  * `int cellsize;`
-    These are sizes suitable for use with `malloc()`
-  * `DMAP *dmap;`
-    This is created from a distance map, and a pointer to the one used
-    is stored here; that in turn has a pointer to the GRID used. The
-    default cell drawing method likes to colorize by distance map, and
-    any method to draw a solution will need the `findpath()` results.
-  * `png_bytep *rowsp;`
-    A list of pointers to each row in the raw binary format favored
-    by libpng for image data.
-  Read-write:
-  * `CELLFUNC_P cellfunc;`
-    This is a function pointer to a call back to draw a single cell.
-    The function should return an int, and take three pointers:
-    a MAZEBITMAP pointer (points back to this structure, for distance
-    map and grid access); a cellimage array (raw data to be written to
-    with a picture of a cell), and a CELL pointer to the cell to be
-    drawn. The `drawmaze()` function will return the sum of all of
-    calls to this function, the default drawing function returns 1 on
-    every successfully drawn cell. If this pointer is not set, then
-    `drawmaze()` will set it.
-  * `COLORFUNC_P colorfunc;`
-    This is a function pointer to a call back to set colors for drawing
-    a cell. It does not return any value, but alters a structure passed
-    in. The function should take pointers to the MAZEBITMAP, a CELL, and
-    a COLORDATA structure, to modify the user writable values there. If
-    this pointer is not set, the default maze drawer will NOT set this,
-    but will use a default color setter.
-  * `void *udata;`
-    This is anything the user wants, but the user must `free()` it.
+  * Treat as read-only:
+    * `int rows, cols;`
+       Copied from the GRID, set during initialization.
+    * `int cell_w, cell_h;`
+    * `int img_w, img_h;`
+       Set during initialization, one pair from parameters and the other
+       calculated based on the CELL_SIZE / MAZE_SIZE setting.
+    * `int colortype;`
+       Set during initialization: COLOR_G, COLOR_GA, COLOR_RGB or
+       COLOR_RGBA.
+    * `int colordepth;`
+       Set during initialization: 1, 2, 4, 8, or 16. This is bits per
+       color channel per pixel.
+    * `int channels;`
+       Set during initialization: 1, 2, 3, or 4. Each of red, green, blue,
+       gray, and alpha is a channel. 1 or 2 is a grayscale image, without
+       or with a alpha. 3 or 4 is RGB without or with alpha.
+    * `int doubled;`
+       Set during initialization if colordepth is 16.
+    * `int rowsize;`
+    * `int cellsize;`
+      These are sizes suitable for use with `malloc()`
+    * `DMAP *dmap;`
+       This is created from a distance map, and a pointer to the one used
+       is stored here; that in turn has a pointer to the GRID used. The
+       default cell drawing method likes to colorize by distance map, and
+       any method to draw a solution will need the `findpath()` results.
+    * `png_bytep *rowsp;`
+       A list of pointers to each row in the raw binary format favored
+       by libpng for image data.
+  * Read-write:
+    * `CELLFUNC_P cellfunc;`
+       This is a function pointer to a call back to draw a single cell.
+       The function should return an int, and take three pointers:
+       a MAZEBITMAP pointer (points back to this structure, for distance
+       map and grid access); a cellimage array (raw data to be written to
+       with a picture of a cell), and a CELL pointer to the cell to be
+       drawn. The `drawmaze()` function will return the sum of all of
+       calls to this function, the default drawing function returns 1 on
+       every successfully drawn cell. If this pointer is not set, then
+       `drawmaze()` will set it.
+    * `COLORFUNC_P colorfunc;`
+       This is a function pointer to a call back to set colors for drawing
+       a cell. It does not return any value, but alters a structure passed
+       in. The function should take pointers to the MAZEBITMAP, a CELL, and
+       a COLORDATA structure, to modify the user writable values there. If
+       this pointer is not set, the default maze drawer will NOT set this,
+       but will use a default color setter.
+    * `void *udata;`
+       This is anything the user wants, but the user must `free()` it.
 
 * `COLORDATA`
   This is the structure used by the default color setter and the default
   cell drawing function. Only the low `depth` number of bits will be
   used from any color value. 0x1000 is black for a depth of under 8.
-  Treat as read-only:
-  * `int channels;`
-    Color channel count: 1: gray; 2: gray alpha; 3: RGB; 4 RGBA. These
-    are the orders to set color values: with `channels` set to 2,
-    `wall[0]` should be the gray value and `wall[1]` the alpha. With
-    channels` set to 3, `wall[0]`, `wall[1]`, `wall[2]` are the red,
-    green, and blue respectively.
-  * `int depth;`
-    Number of bits for each color: 1, 2, 4, 8, or 16.
-  To be filled in by a color setter:
-  * `int wall[4];`
-    Interior wall colors in expected order.
-  * `int edge[4];`
-    Outer edge colors in expected order.
-  * `int fg[4];`
-  * `int bg[4];`
-    Foreground/background colors.
-  * `int uc1[4];`
-  * `int uc2[4];`
-  * `int uc3[4];`
-  * `int uc4[4];`
-    User-use colors.
+  * Treat as read-only:
+    * `int channels;`
+       Color channel count: 1: gray; 2: gray alpha; 3: RGB; 4 RGBA. These
+       are the orders to set color values: with `channels` set to 2,
+       `wall[0]` should be the gray value and `wall[1]` the alpha. With
+       channels` set to 3, `wall[0]`, `wall[1]`, `wall[2]` are the red,
+       green, and blue respectively.
+    * `int depth;`
+       Number of bits for each color: 1, 2, 4, 8, or 16.
+  * To be filled in by a color setter:
+    * `int wall[4];`
+       Interior wall colors in expected order.
+    * `int edge[4];`
+       Outer edge colors in expected order.
+    * `int fg[4];`
+    * `int bg[4];`
+       Foreground/background colors.
+    * `int uc1[4];`
+    * `int uc2[4];`
+    * `int uc3[4];`
+    * `int uc4[4];`
+       User-use colors.
 
 
 Defined Values
