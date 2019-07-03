@@ -77,6 +77,7 @@ General code
 
 1. `grid.c` and `grid.h`
    * implements a grid with a notion of walls between cells
+   * copy, rotate, and paste-into tools for assembling a large maze from parts
    * provides an ASCII art grid printer
 2. `distance.c` and `distance.h`
    * as an adjuct to `grid.c`, this measures distances
@@ -92,6 +93,8 @@ General code
    * PNG output for RGBA, RGB, GA (gray + alpha) in either 8 or 16 bits
    * PNG output for Gray in 1, 2, 4, 8, or 16 bits
    * PNM (PBM/PGM/PPM/PAM) for all PNG supported color and grayscale depths
+
+[Code reference](/Reference.md)
 
 Short variables by convention:
  * `g` is grid
