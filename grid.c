@@ -56,7 +56,7 @@ copycell(CELL *orig, CELL *dupe, CELLCOPYCONFIG *conf)
 {
   int r,c,newid;
 
-#define CALCNEWID(i) { if((conf->origwidth == conf->newwidth) && \
+#define CALCNEWID(i) { if((i == NC) || (conf->origwidth == conf->newwidth) && \
                           (conf->rowoffset == 0) && \
                           (conf->coloffset == 0)) { \
 			 newid = (i); \
