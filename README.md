@@ -50,6 +50,14 @@ Playable games:
    * wander a maze collecting prizes and live to escape
    * ascii only output
    * simple *type a direction* input
+2. `four`
+   * Playable in the sense that you can print it out and draw in it
+       * The edges have openings to let you "in" and "out"
+       * By default those cells are also colored because window borders
+         hide the edge cut outs on-screen
+   * Command line options for grid size, maze cell size, and colors
+   * Creates two images, one solved and one not solved
+   * PNG output by default, an unsolved ASCII maze optional addition
 
 Code test:
 
