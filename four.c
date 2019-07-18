@@ -106,6 +106,7 @@ main(int argc, char**argv)
 	 { "bg",        required_argument,  0,  'B' },
 	 { "answer",    required_argument,  0,  'A' },
 	 { "showascii", no_argument,        0,  'a' },
+	 { "help",      no_argument,        0,  '?' },
 	 { 0,0,0,0 }
       };
 
@@ -149,10 +150,25 @@ main(int argc, char**argv)
         break;
 
       case '?':
-        printf("Usage: four can take three options\n");
+        printf("Usage: options for four\n");
+	printf("   -a        --ascii           also print ascii art version\n");
+	printf("   -b  NAME  --basename NAME   base filename for output\n");
 	printf("   -c  NUM   --cellsize NUM    pixel size of a cell\n");
 	printf("   -t  NUM   --tilesize NUM    tile size of a submaze\n");
-	printf("   -b  NAME  --basename NAME   base filename for output\n");
+	printf("   -A  COLOR --answer   COLOR  color for answer line\n");
+	printf("   -B  COLOR --bg       COLOR  color for cell background\n");
+	printf("   -E  COLOR --edge     COLOR  color for outer edge\n");
+	printf("   -F  COLOR --finish   COLOR  color for finish background\n");
+	printf("   -S  COLOR --start    COLOR  color for start background\n");
+	printf("   -W  COLOR --wall     COLOR  color for cell walls\n");
+	printf("\n");
+	printf("COLOR is RGB values in six-character hexadecimal or a three character\n");
+	printf("color name where \"aaa\" is black and \"zzz\" is white, and lower\n");
+	printf("case colors in between \"a\" and \"z\" are proportionally spaced.\n");
+	printf("Those names taken from an idea posted to comp.lang.c by \"Prof Fir\".\n");
+	printf("\n");
+	printf("Creates two images of the same maze: NAME-maze.png and NAME-answer.png\n");
+	printf("Every maze is 4x4 tiles, each tile one of four maze algorithms.\n");
 	return 1;
         break;
 
