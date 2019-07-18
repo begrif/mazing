@@ -1,6 +1,8 @@
 /* June 2019, Benjamin Elijah Griffin / Eli the Bearded */
 /* tools for a maze grid */
 
+/* get us some strnlen */
+#define _POSIX_C_SOURCE  200809L
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
@@ -865,6 +867,11 @@ wallstatusbyid(GRID *g, int id)
 
   return wallstatusbycell(visitid(g,id));
 } /* wallstatusbyid() */
+
+
+#define exitsbycell(g,c) (wallstatusbycell(c)     | edgestatusbycell(g,c))
+#define exitsbyrc(g,i,j) (wallstatusbycell(g,i,j) | edgestatusbycell(g,i,j))
+#define exitsbyid(g,id)  (wallstatusbycell(g,id)  | edgestatusbycell(g,d))
 
 
 /* 

@@ -2,6 +2,9 @@
 /* test making a maze grid into an image */
 /* uses libpng.h */
 
+/* get us some strnlen */
+#define _POSIX_C_SOURCE  200809L
+
 #include "mazeimg.h"
 #include "mazes.h"
 
