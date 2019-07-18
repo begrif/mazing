@@ -2,10 +2,10 @@
 CFLAGS = -g -std=c99 -D_BSD_SOURCE
 LDLIBS = -lpng
 
-GAMES = btadventure
+GAMES = btadventure four
 
 ALLMAZES = binary_tree sidewinder aldousbroder wilson huntkill backtracker \
-	aldousbroder_masked wilson_masked huntkill_masked backtracker_masked
+	aldousbroder_masked wilson_masked huntkill_masked backtracker_masked 
 
 TESTPROGRAMS = testgrid testdistance testmazeimg testmazeimgstdout
 
@@ -32,12 +32,13 @@ test: testprograms
 	@echo ALL TESTS SUCCEEDED
 
 clean:
-	rm -rf *.o tmp*.png tmp*.pnm core core.[0-9]*
+	rm -rf *.o tmp*.png tmp*.pnm four-default-*.png core core.[0-9]*
 
 realclean: clean
 	rm -f $(GAMES) $(ALLMAZES) $(TESTPROGRAMS)
 
 btadventure: btadventure.o grid.o mazes.o
+four: four.o forfour.o grid.o distance.o mazes.o mazeimg.o
 
 testgrid: testgrid.o grid.o
 testdistance: testdistance.o distance.o grid.o mazes.o
@@ -63,6 +64,8 @@ mazeimg.o: mazeimg.h distance.h grid.h
 testmazeimg.o: mazeimg.h mazes.h distance.h grid.h
 testmazeimgstdout.o: mazeimg.h mazes.h distance.h grid.h
 btadventure.o: grid.h mazes.h
+four.o: forfour.h mazeimg.h mazes.h distance.h grid.h
+forfour.o: forfour.h mazeimg.h distance.h grid.h
 binary_tree.o: grid.h mazes.h
 sidewinder.o: grid.h mazes.h
 aldousbroder.o: grid.h mazes.h distance.h
