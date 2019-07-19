@@ -1,5 +1,6 @@
 *.o
 testgrid
+testlab
 testdistance
 testmazeimg
 testmazeimgstdout

@@ -55,6 +55,14 @@ Functions
   borders of the destination, and will be positioned at the top,left
   cell in destination. If includeuserdata is set, those pointers
   will be copied (but the data itself is opaque).
+* `GRID *labyrinthgrid(GRID *grid, int entranceid)`
+  Makes a grid with a perfect maze into a perfect unicursal (single path)
+  maze. The original grid is unmodified, and the new labyrinth is a new
+  grid that is twice as wide and tall. Any edge cell can be an entrance
+  if it has a link off grid (or to self) in an edge direction. If an
+  entranceid is specified, off-grid links for the matching cells on the
+  labyrinth are fixed. Cell types are copied to matching cells, but
+  cell names are not copied. Safe for use on masked grids.
 * `CELL* visitid(GRID *grid, int id)`
   Returns a pointer to the cell with a given id or NULL. Fastest of the
   `visit` family of functions.
@@ -105,6 +113,7 @@ The families are:
 * `natdirection...()` to return the direction from one cell to another
 * `edgestatus...()` returns bitflags about the edges around a cell
 * `wallstatus...()` returns bitflags about the walls around a cell
+* `exitstatus...()` returns bitflags about the exits of a cell
 * `ncount...()` returns a count of neighboring cells
 * `name...()` puts a name on a cell
 
@@ -146,10 +155,18 @@ The families are:
 * `int wallstatusbyrc(GRID *grid, int row, int col)`
 * `int wallstatusbyid(GRID *grid, int id)`
   These return bit flags about edge and wall status of cell. Edges and
-  walls use the same bits, so the results can be bitwise or'ed together
+  walls use the same bits, so the results can be bitwise OR'ed together
   for barrier status. But edge and wall error conditions differ. There
   are also NO_WALLS and NO_EDGES bits which differ. See the 
   *_WALL defines.
+
+* `int exitstatusbycell(CELL *cell)`
+* `int exitstatusbyrc(GRID *grid, int row, int col)`
+* `int exitstatusbyid(GRID *grid, int id)`
+  These return bit flags about exit status of cell (including up and
+  down). Exits use different bits than walls and edges and can be
+  safely OR'ed together with wall/edge status. There are NO_EXITS,
+  EXIT_ERROR, and *_EXIT defines.
 
 * `int ncountbycell(GRID *grid, CELL *cell, int concern, int type)`
 * `int ncountbyrc(GRID *grid, int row, int col, int concern, int type)`
@@ -606,12 +623,21 @@ Defined Values
 * `SOUTHEAST_CORNER`
    Bit mask for a wall or edge (either boundary) in both of those
    directions.
+* `NORTH_EXIT`
+* `WEST_EXIT`
+* `EAST_EXIT`
+* `SOUTH_EXIT`
+* `UP_EXIT`
+* `DOWN_EXIT`
+   Bit mask for an exit (either boundary) in that direction.
 * `NO_WALLS`
-   Bit mask for no walls on the current cell (different than no edges)
+   Bit mask for no walls on the current cell (different than no edges/exits)
 * `NO_EDGES`
-   Bit mask for no edges on the current cell (different than no walls)
-* `EDGE_ERROR` `WALL_ERROR`
-   Bit mask for an error response.
+   Bit mask for no edges on the current cell (different than no walls/exits)
+* `NO_EXITS`
+   Bit mask for no exits on the current cell (different than no edges/walls)
+* `EDGE_ERROR` `WALL_ERROR` `EXIT_ERROR`
+   Bit mask for an error response from edge/wall/exit status functions.
 * `PLAIN_ASCII`
    Simpler output option for `ascii_grid()`
 * `USE_NAMES`

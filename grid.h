@@ -41,17 +41,25 @@
 #define FLIP_TRANSPOSE    -78	/* transpose is same as both CCW and L-R */
 
 /* for use with the edgestatus functions */
-#define NORTH_EDGE              0x001
-#define WEST_EDGE               0x002
-#define EAST_EDGE               0x004
-#define SOUTH_EDGE              0x008
-#define NO_EDGES                0x100
-/* used below                   0x200 */
-#define EDGE_ERROR              0x800
-#define NORTHWEST_CORNER        (0x001|0x002)
-#define NORTHEAST_CORNER        (0x001|0x004)
-#define SOUTHWEST_CORNER        (0x008|0x002)
-#define SOUTHEAST_CORNER        (0x008|0x004)
+#define NORTH_EDGE              0x00001
+#define WEST_EDGE               0x00002
+#define EAST_EDGE               0x00004
+#define SOUTH_EDGE              0x00008
+#define NO_EDGES                0x00100
+#define NO_WALLS		0x00200
+#define NO_EXITS		0x00400
+#define EDGE_ERROR              0x00800
+#define NORTH_EXIT		0x01000
+#define WEST_EXIT		0x02000
+#define EAST_EXIT		0x04000
+#define SOUTH_EXIT		0x08000
+#define UP_EXIT   		0x10000
+#define DOWN_EXIT		0x20000
+
+#define NORTHWEST_CORNER        (NORTH_EDGE|WEST_EDGE)
+#define NORTHEAST_CORNER        (NORTH_EDGE|EAST_EDGE)
+#define SOUTHWEST_CORNER        (SOUTH_EDGE|WEST_EDGE)
+#define SOUTHEAST_CORNER        (SOUTH_EDGE|EAST_EDGE)
 
 /* for use with the wallstatus functions */
 /* (wall|edge) gives all blockages.      */
@@ -59,8 +67,8 @@
 #define WEST_WALL	WEST_EDGE
 #define EAST_WALL	EAST_EDGE
 #define SOUTH_WALL	SOUTH_EDGE
-#define NO_WALLS	0x200
 #define WALL_ERROR	EDGE_ERROR
+#define EXIT_ERROR	EDGE_ERROR
 
 /* for ascii_grid() */
 #define PLAIN_ASCII     0
@@ -124,11 +132,30 @@ int rotategrid(GRID *, int /*rotation flag*/);
 GRID *copygrid(GRID *, int /* includeuserdata */);
 int pasteintogrid(GRID * /* src */, GRID * /* dest */,
 	int /* top */, int /* left */, int /* includeuserdata */);
+GRID *labyrinthgrid(GRID *, int /* entranceid */);
 
 /* visit functions return a CELL pointer */
 /* visitid() is the fastest of the lot */
+/* macro versions should be faster than function versions */
+#ifdef VISIT_FUNCTIONS
 CELL *visitrc(GRID *, int /*rows*/, int /*cols*/);
 CELL *visitid(GRID *, int /*cellid*/);
+#else  /* VISIT_FUNCTIONS */
+static int macro_id,macro_i,macro_j;
+static GRID *macro_g;
+#define visitrc(g,i,j)  ( macro_g=(g), macro_i = (i), macro_j = (j),                 \
+                          (!macro_g || (macro_i < 0) || (macro_i >= macro_g->rows)   \
+                                    || (macro_j < 0) || (macro_j >= macro_g->cols))  \
+			  ?   (CELL*)NULL                                            \
+			  :   &(macro_g->cells[macro_g->cols*macro_i+macro_j])       \
+			)
+
+#define visitid(g,id)   ( macro_g=(g), macro_id = (id),         \
+                          (!g || (id < 0) || (id >= g->max) )   \
+				? (CELL*)NULL                   \
+				: &(g->cells[id])               \
+			)
+#endif
 CELL *visitdir(GRID *, CELL */*cell*/, int/*direction*/, int/* connection status */);
 CELL *visitrandom(GRID *);
 
@@ -142,6 +169,7 @@ CELL *visitrandom(GRID *);
  * disconnect removes connections
  * edgestatus returns information about edges
  * wallstatus returns information about walls
+ * exitstatus returns information about exits
  * natdirection returns a direction between cells (but not for any pair)
  * ncount returns a count of neighbors for a cell
  */
@@ -201,6 +229,10 @@ int wallstatusbycell(CELL *);
 int wallstatusbyrc(GRID *, int /*row*/, int/*col*/);
 int wallstatusbyid(GRID *, int /*id*/);
 
+int exitstatusbycell(CELL *);
+int exitstatusbyrc(GRID *, int /*row*/, int/*col*/);
+int exitstatusbyid(GRID *, int /*id*/);
+
 /* assign a name (to a newly malloced string) to a cell */
 int namebycell(CELL *, char *);
 int namebyrc(GRID *, int /*row*/, int/*col*/, char *);
@@ -228,4 +260,6 @@ const char *dirtoname(int /*dir*/);
 
 /* naive ascii art version of a grid */
 char *ascii_grid(GRID *, int /* use_name */);
+
+
 #endif

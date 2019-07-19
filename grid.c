@@ -279,6 +279,158 @@ pasteintogrid(GRID *sg, GRID *dg, int top, int left, int includeuserdata)
   return rc;
 } /* pasteintogrid() */
 
+/* For a given grid, create a labyrinth (unicursal maze: there are no
+ * branches or dead ends, just a long winding path all the way through).
+ *
+ * Optionally any edge cell can be an entrance by having connections
+ * outside the grid in the entrance direction. Three options there:
+ *   1. A cell can connect back to itself in that direction
+ *   2. A cell can link to a cell ID < NC
+ *   3. A cell can link to a cell ID >= grid max
+ * If an entrance ID is specified, the links for the new cells that
+ * go off-grid will be fixed. Case one cells will link back to the
+ * newly generated cells; case 2 and 3 cells will link to the same
+ * cell ID as the original. Be careful with case 3, since the new
+ * grid has a 4x larger max.
+ *
+ * Cell types, but not names, will be copied to children cells.
+ *
+ * The labyrinth is twice as wide and tall as the original grid, and
+ * only guaranteed perfect if the original grid was a perfect maze.
+ * (It's guaranteed perfect for the same reason the right-hand rule
+ * will eventually take you back to the same spot in a perfect maze.)
+ *
+ * The process is take a maze and subdivide every cell in a new grid:
+ *
+ *      ______________.            ______________.
+ * enter    |         |       enter__. | ______. |
+ * enter    |______   |        exit  | |______ | |
+ *      |   |         |            | | | ______| |
+ *      |   |______   |            | | |______ | |
+ *      |             |            | |_________| |
+ *      |_____________|            |_____________|
+ *
+ * The difference between an entrance and a non-entrance is the need
+ * to draw a line to the edge there.
+ *
+ * Returns NULL on error, or a new grid. The source grid is unmodified.
+ */
+GRID *
+labyrinthgrid(GRID *g, int cid)
+{
+  GRID *lg;
+  CELL *sc, *dc;
+  int si,di,sj,dj,go,e,drows,dcols,nid;
+
+  if(!g) { return NULL; }
+  drows = g->rows * 2;
+  dcols = g->cols * 2;
+  lg = creategrid(drows, dcols, g->gtype);
+  if(!lg) { return NULL; }
+
+  /* si,sj is always source cell row,col
+   * di,dj is always NW labyrinth cell; di+1 for S cell, dj+1 for E cell
+   *          di-1 for neighbor to N, di+2 for neighbor to S
+   *          dj-1 for neighbor to W, dj+2 for neighbor to E
+   */
+  for(si = 0; si < g->rows; si ++) {
+    di = si * 2;
+    for(sj = 0; sj < g->cols; sj ++) {
+      dj = sj * 2;
+      sc = visitrc(g, si, sj);
+      if(!sc) { freegrid(lg); return NULL; }
+      e = exitstatusbycell(sc);
+
+      if(e == NO_EXITS) {
+	/* probably masked off */
+        continue;
+      }
+
+      /* NW corner of the new quadrant.
+       * Connect N or W if original has N or W exits.
+       * Connect S if original has no W exit.
+       * Connect E if original has no N exit.
+       */
+      dc = visitrc(lg, di, dj);
+      if(!dc) { freegrid(lg); return NULL; }
+      dc->ctype = sc->ctype;
+      if   (e & NORTH_EXIT) { dc->dir[NORTH] = (di - 1) * dcols + dj    ; }
+      else                  { dc->dir[EAST]  = (di    ) * dcols + dj + 1; }
+      if   (e & WEST_EXIT ) { dc->dir[WEST]  = (di    ) * dcols + dj - 1; }
+      else                  { dc->dir[SOUTH] = (di + 1) * dcols + dj    ; }
+
+      /* NE corner of the new quadrant.
+       * Connect N or E if original has N or E exits.
+       * Connect S if original has no E exit.
+       * Connect W if original has no N exit.
+       */
+      dc = visitrc(lg, di, dj + 1);
+      if(!dc) { freegrid(lg); return NULL; }
+      dc->ctype = sc->ctype;
+      if   (e & NORTH_EXIT) { dc->dir[NORTH] = (di - 1) * dcols + dj + 1; }
+      else                  { dc->dir[WEST]  = (di    ) * dcols + dj    ; }
+      if   (e & EAST_EXIT ) { dc->dir[EAST]  = (di    ) * dcols + dj + 2; }
+      else                  { dc->dir[SOUTH] = (di + 1) * dcols + dj + 1; }
+
+      /* SW corner of the new quadrant.
+       * Connect S or W if original has S or W exits.
+       * Connect N if original has no W exit.
+       * Connect E if original has no S exit.
+       */
+      dc = visitrc(lg, di + 1, dj);
+      if(!dc) { freegrid(lg); return NULL; }
+      dc->ctype = sc->ctype;
+      if   (e & SOUTH_EXIT) { dc->dir[SOUTH] = (di + 2) * dcols + dj    ; }
+      else                  { dc->dir[EAST]  = (di + 1) * dcols + dj + 1; }
+      if   (e & WEST_EXIT ) { dc->dir[WEST]  = (di + 1) * dcols + dj - 1; }
+      else                  { dc->dir[NORTH] = (di    ) * dcols + dj    ; }
+
+      /* SE corner of the new quadrant.
+       * Connect S or E if original has S or E exits.
+       * Connect N if original has no E exit.
+       * Connect W if original has no S exit.
+       */
+      dc = visitrc(lg, di + 1, dj + 1);
+      if(!dc) { freegrid(lg); return NULL; }
+      dc->ctype = sc->ctype;
+      if   (e & SOUTH_EXIT) { dc->dir[SOUTH] = (di + 2) * dcols + dj + 1; }
+      else                  { dc->dir[WEST]  = (di + 1) * dcols + dj    ; }
+      if   (e & EAST_EXIT ) { dc->dir[EAST]  = (di + 1) * dcols + dj + 2; }
+      else                  { dc->dir[NORTH] = (di    ) * dcols + dj + 1; }
+
+      if((cid != NC) && (sc->id == cid)) {
+        /* okay, this is the entrance. Fix the off-grid directions */
+
+        for(go = FIRSTDIR; go < FOURDIRECTIONS; go ++) {
+	  nid = NC;
+
+	  if(sc->dir[go] == cid) {
+	    /* case one */
+	    nid = 0;
+	  }
+	  else if((sc->dir[go] >= g->max) || (sc->dir[go] < NC)) {
+	    /* cases two and three */
+	    nid = sc->dir[go];
+	  }
+
+	  if(nid != NC) {
+	    /* when 0, link back to self; otherwise link to original id */
+
+            dc = visitrc(lg, (di + (go == SOUTH)?1:0), (dj + (go == EAST)?1:0) );
+	    if(nid) { dc->dir[go] = nid; } else { dc->dir[go] = dc->id; }
+
+            dc = visitrc(lg, (di + (go != NORTH)?1:0), (dj + (go != WEST)?1:0) );
+	    if(nid) { dc->dir[go] = nid; } else { dc->dir[go] = dc->id; }
+
+	  } /* found the direction to fix */
+	}
+      } /* if fixing an entrance */
+
+    } /* for source column */
+  } /* for source row */
+
+  return lg;
+} /* labyrinthgrid() */
 
 /* This calculation ends up being needed a lot. If rotations happened
  * often, I'd make each case statement calculation into a macro.
@@ -474,6 +626,7 @@ rotategrid(GRID *g, int rotation)
 } /* rotategrid() */
 
 /* visit a cell by co-ordinates, return pointer or NULL */
+#ifdef VISIT_FUNCTIONS
 CELL*
 visitrc(GRID *g, int i, int j)
 {
@@ -485,7 +638,7 @@ visitrc(GRID *g, int i, int j)
 
   index = (g->cols * i) + j;
   return &(g->cells[index]);
-} /* visit() */
+} /* visitrc() */
 
 /* visit a cell directly by id, return pointer or NULL */
 CELL*
@@ -495,12 +648,15 @@ visitid(GRID *g, int id)
     return (CELL*)NULL;
   }
 
-  if(id > g->max) {
+  if(id >= g->max) {
     return (CELL*)NULL;
   }
 
   return &(g->cells[id]);
 } /* visitid() */
+#else  /* VISIT_FUNCTIONS */
+/* in grid.h */
+#endif /* VISIT_FUNCTIONS */
 
 /* from cell c,
  * visit a cell in direction d,
@@ -869,10 +1025,42 @@ wallstatusbyid(GRID *g, int id)
 } /* wallstatusbyid() */
 
 
-#define exitsbycell(g,c) (wallstatusbycell(c)     | edgestatusbycell(g,c))
-#define exitsbyrc(g,i,j) (wallstatusbycell(g,i,j) | edgestatusbycell(g,i,j))
-#define exitsbyid(g,id)  (wallstatusbycell(g,id)  | edgestatusbycell(g,d))
+/* for a particular cell, return information about the exits
+ * from it. Exits are returned as bit status flags, so check
+ * results accordingly. Unlike walls or edges, this does UP/DOWN.
+ */
+int
+exitstatusbycell(CELL *c)
+{
+  int exits = 0;
+  if(!c) { return EXIT_ERROR; }
 
+  if(c->dir[NORTH] != NC) { exits = exits|NORTH_EXIT; }
+  if(c->dir[WEST]  != NC) { exits = exits|WEST_EXIT; }
+  if(c->dir[SOUTH] != NC) { exits = exits|SOUTH_EXIT; }
+  if(c->dir[EAST]  != NC) { exits = exits|EAST_EXIT; }
+  if(c->dir[UP]    != NC) { exits = exits|UP_EXIT; }
+  if(c->dir[DOWN]  != NC) { exits = exits|DOWN_EXIT; }
+
+  if (exits == 0) { exits = NO_EXITS; }
+  return exits;
+} /* exitstatusbycell() */
+
+int
+exitstatusbyrc(GRID *g, int i, int j)
+{
+  if(!g) { return EXIT_ERROR; }
+
+  return exitstatusbycell(visitrc(g,i,j));
+} /* exitstatusbyrc() */
+
+int
+exitstatusbyid(GRID *g, int id)
+{
+  if(!g) { return EXIT_ERROR; }
+
+  return exitstatusbycell(visitid(g,id));
+} /* exitstatusbyid() */
 
 /* 
  * natdirection{BAR} returns the expected direction from C1 to C2

@@ -5,9 +5,9 @@ LDLIBS = -lpng
 GAMES = btadventure four
 
 ALLMAZES = binary_tree sidewinder aldousbroder wilson huntkill backtracker \
-	aldousbroder_masked wilson_masked huntkill_masked backtracker_masked 
+	aldousbroder_masked wilson_masked huntkill_masked backtracker_masked
 
-TESTPROGRAMS = testgrid testdistance testmazeimg testmazeimgstdout
+TESTPROGRAMS = testgrid testlab testdistance testmazeimg testmazeimgstdout
 
 all: allgames allmazes testprograms
 
@@ -19,6 +19,7 @@ testprograms: $(TESTPROGRAMS)
 
 test: testprograms
 	./testgrid
+	./testlab
 	./testdistance
 	./testmazeimg
 	./testmazeimgstdout > tmp-testmazeimgstdout.pnm
@@ -41,6 +42,7 @@ btadventure: btadventure.o grid.o mazes.o
 four: four.o forfour.o grid.o distance.o mazes.o mazeimg.o
 
 testgrid: testgrid.o grid.o
+testlab: testlab.o grid.o
 testdistance: testdistance.o distance.o grid.o mazes.o
 testmazeimg: testmazeimg.o mazeimg.o distance.o grid.o mazes.o
 testmazeimgstdout: testmazeimgstdout.o mazeimg.o distance.o grid.o mazes.o
@@ -59,7 +61,7 @@ mazes.o: distance.h grid.h mazes.h
 testgrid.o: grid.h
 grid.o: grid.h mazes.h
 testdistance.o: distance.h grid.h mazes.h
-distance.o: distance.h
+distance.o: distance.h grid.h
 mazeimg.o: mazeimg.h distance.h grid.h
 testmazeimg.o: mazeimg.h mazes.h distance.h grid.h
 testmazeimgstdout.o: mazeimg.h mazes.h distance.h grid.h
